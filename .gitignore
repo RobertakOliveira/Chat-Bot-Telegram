@@ -1,0 +1,17 @@
+# Ignorar arquivos de histórico e configurações locais do usuário
+hash_history
+hash_profile
+hashtrc
+.gitconfig
+lesshist  # Corrigido: "lesablist" → "lesshist"
+node_repl_history
+.npmrc
+packettracer
+python_history
+
+# Ignorar cache do AMD XSO e LM Studio
+.amdxso/  # Corrigido: ".ambtsol" → ".amdxso"
+cache/lm-studio/  # Corrigido: "In-studio" → "lm-studio"
+
+# Ignorar arquivos JSON em qualquer subdiretório
+**/*.json  # Corrigido: "*v/*, json" → "**/*.json"
