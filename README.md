@@ -76,3 +76,13 @@ Faça um chatbot para consulta de documentos jurídicos. Para tanto, devem ser c
 * Após todas as apresentações a coordenação também fornecerá o feedback comportamental.
 
 ***
+
+## <div align="center">Sobre os Autores
+### **Eduardo Augusto De Oliveira Mendes**  
+🌐 [GitHub](https://github.com/EduAugustoM) | [LinkedIn](https://www.linkedin.com/in/eduardo-augusto-mendes/) 
+
+### **Emanuelle Meireles**
+🌐 [GitHub](https://github.com/EmanuelleMeireles) | [LinkedIn](https://www.linkedin.com/in/emanuelle-meireles-a4b331317/)
+
+### **Osvaldo Gomes de Oliveira Neto**
+🌐 [GitHub](https://github.com/Osvaldo-arq) | [LinkedIn](https://www.linkedin.com/in/osvaldo-gomes-de-oliveira-neto-026306269/)
