@@ -11,15 +11,13 @@ Dependências:
 """
 
 import os
+from typing import Any
 from botocore.exceptions import ClientError
-from typing import Any, Dict
 from chat.utils.aws_clients import ssm_client
 
 
 class ConfigLoader:
-    """
-    Carrega configurações do SSM com fallback para variáveis de ambiente/defaults.
-    """
+    """Carrega configurações do SSM com fallbacks inteligentes."""
 
     _instance = None
 
@@ -30,42 +28,47 @@ class ConfigLoader:
         return cls._instance
 
     def _load_config(self):
-        """Carrega todas as configurações na inicialização"""
+        """Carrega todas as configurações com valores padrão otimizados"""
         self._config = {
-            "S3_BUCKET_NAME": self._get_param("/chatbot-juridico/s3-bucket-name", "default-bucket"),
-            "BEDROCK_MODEL_ID": self._get_param("/chatbot-juridico/bedrock-model-id", "amazon.titan-embed-text-v1"),
-            "LOG_GROUP": self._get_param("/chatbot-juridico/log-group", "/aws/bedrock/embeddings")
+            # Configurações existentes
+            "S3_BUCKET_NAME": self._get_param("/chatbot-juridico/s3-bucket-name", "consultor-juridico"),
+            "BEDROCK_MODEL_ID": self._get_param("/chatbot-juridico/bedrock-model-id", "amazon.titan-embed-text-v2:0"),
+            "LOG_GROUP": self._get_param("/chatbot-juridico/log-group", "/aws/legal-bot/embeddings"),
+
+            # Novas configurações (adicionadas)
+            "EMBEDDING_DIMENSIONS": int(self._get_param("/chatbot-juridico/embedding-dimensions", "512")),
+            "CHUNK_SIZE": int(self._get_param("/chatbot-juridico/chunk-size", "800")),
+            "CHUNK_OVERLAP": int(self._get_param("/chatbot-juridico/chunk-overlap", "150")),
+            "MAX_TOKENS": int(self._get_param("/chatbot-juridico/max-tokens", "8000"))
         }
 
     def _get_param(self, name: str, default: Any) -> Any:
-        """
-        Tenta obter parâmetro do SSM, fallback para env var/default.
-
-        Args:
-            name: Nome do parâmetro no SSM
-            default: Valor padrão se não encontrado
-
-        Returns:
-            Valor do parâmetro ou default
-        """
+        """Obtém parâmetro com tratamento de erros robusto."""
         try:
             response = ssm_client.get_parameter(Name=name, WithDecryption=True)
             return response['Parameter']['Value']
         except ClientError as e:
+            env_var = name.replace('/', '_').upper()
             print(
-                f"[CONFIG] Parâmetro {name} não encontrado, usando fallback. Erro: {e}")
-            return os.getenv(name.replace('/', '_').upper(), default)
+                f"[CONFIG] Parâmetro {name} não encontrado, usando {env_var} ou default. Erro: {e}")
+            return os.getenv(env_var, default)
 
     def __getattr__(self, name: str) -> Any:
-        """Acesso às configurações como propriedades"""
+        """Acesso type-safe às configurações."""
         if name in self._config:
             return self._config[name]
-        raise AttributeError(f"Configuração {name} não encontrada")
+        raise AttributeError(
+            f"Configuração {name} não existe. Opções válidas: {list(self._config.keys())}")
 
 
-# Singleton acessível globalmente
+# 🔁 Singleton global
 config = ConfigLoader()
+
 if __name__ == "__main__":
-    # Teste de carga das configurações
-    print(f"Bucket S3: {S3_BUCKET_NAME}")
-    print(f"Modelo Bedrock: {BEDROCK_MODEL_ID}")
+    # Teste de configuração
+    print("\nConfigurações Carregadas:")
+    print(f"- Bucket S3: {config.S3_BUCKET_NAME}")
+    print(f"- Modelo Bedrock: {config.BEDROCK_MODEL_ID}")
+    print(f"- Dimensões: {config.EMBEDDING_DIMENSIONS}")
+    print(f"- Tamanho do Chunk: {config.CHUNK_SIZE} caracteres")
+    print(f"- Sobreposição: {config.CHUNK_OVERLAP} caracteres")
