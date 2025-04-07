@@ -22,8 +22,8 @@ Chatbot para consulta de documentos jurídicos utilizando:
 | Tarefa | Responsável | Entregáveis |
 |--------|------------|-------------|
 | Extrair textos (PyPDF) | Membro 2 | `app/data_processing.py` |
-| Gerar embeddings | Membro 3 | Lambda function |
-| Indexar ChromaDB | Membro 1 | Vector store |
+| Gerar embeddings | Membro 2 | Lambda function |
+| Indexar ChromaDB | Membro 3 | Vector store |
 
 ### 🔗 Semana 3 (17/04 - 23/04): Integração
 | Tarefa | Responsável | Entregáveis |
