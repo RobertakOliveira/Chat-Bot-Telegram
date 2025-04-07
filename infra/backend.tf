@@ -1,0 +1,2 @@
+# Backend com encryption ativada, significa que os dados armazenados no backend serão criptografados e protegidos.
+# Isso é importante para garantir a segurança dos dados sensíveis armazenados no backend.
