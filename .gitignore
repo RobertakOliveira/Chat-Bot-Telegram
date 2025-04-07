@@ -19,3 +19,9 @@ cache/lm-studio/  # Corrigido: "In-studio" → "lm-studio"
 # Ignorar arquivos de variáveis pessoais
 *.tfvars
 *.tfvars.json
+
+# Ignorar arquivos de configuração do Terraform e do AWS
+*.tfvars
+*.tfstate
+.aws/
+.env
