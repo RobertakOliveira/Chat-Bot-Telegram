@@ -15,11 +15,11 @@ resource "aws_instance" "chatbot_server" {
   
   # Nome único para a instância
   tags = merge(
-    var.default_tags,
+    var.common_tags,
     {
       Name    = "chatbot-server-${random_id.ec2_suffix.hex}"
       Owner   = var.owner_tag
-      Service = "chatbot-juridico"
+      Service = "application"
     }
   )
 }
@@ -30,9 +30,9 @@ resource "aws_security_group" "chatbot_sg" {
   description = "Security Group para o Chatbot Jurídico"
 
   tags = merge(
-    var.default_tags,
+    var.common_tags,
     {
-      Owner = var.owner_tag
+     Component = "security"
     }
   )
 }
