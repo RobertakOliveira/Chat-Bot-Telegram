@@ -1,0 +1,1 @@
+# Configuração genérica do provider (sem credenciais) assim não será necessário repetir o provider em cada módulo
