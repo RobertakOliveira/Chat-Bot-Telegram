@@ -1,0 +1,2 @@
+# Policies com least privilege, significa que as permissões concedidas são as mínimas necessárias para realizar as operações necessárias.
+# Isso é importante para garantir a segurança e a conformidade, minimizando o risco de acesso não autorizado ou ações indesejadas.
