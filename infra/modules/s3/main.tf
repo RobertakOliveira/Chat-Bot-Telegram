@@ -1,8 +1,3 @@
-# Aqui o código do módulo S3:
-# # Módulo S3 para criar um bucket S3 com criptografia ativada e políticas de acesso restritas.
-# # O módulo também cria uma política de IAM para acesso ao bucket S3.
-# # O módulo é configurável através de variáveis de entrada.
-
 resource "random_id" "bucket_suffix" {
   byte_length = 4
 }
@@ -10,11 +5,14 @@ resource "random_id" "bucket_suffix" {
 resource "aws_s3_bucket" "docs" {
   bucket = "chatbot-docs-${var.owner_tag}-${random_id.bucket_suffix.hex}"
   
-  tags = {
-    Owner    = var.owner_tag
-    Project  = "chatbot-juridico"
-    ManagedBy = "terraform"
-  }
+  tags = merge(
+    var.common_tags,
+    {
+      Name      = "chatbot-docs-${var.owner_tag}"
+      Component = "storage"
+      Sensitivity = "high"
+    }
+  )
 }
 
 resource "aws_s3_bucket_versioning" "docs" {
@@ -31,4 +29,13 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "docs" {
       sse_algorithm = "AES256"
     }
   }
+}
+
+resource "aws_s3_bucket_public_access_block" "block" {
+  bucket = aws_s3_bucket.docs.id
+  
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
