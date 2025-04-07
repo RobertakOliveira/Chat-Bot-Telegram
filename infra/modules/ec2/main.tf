@@ -1,0 +1,2 @@
+## Recursos com tags + random suffixes, significa que os recursos criados terão sufixos aleatórios adicionados aos seus nomes.
+# # Isso é importante para garantir que os recursos sejam únicos e evitar conflitos de nomes.
