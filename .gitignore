@@ -15,3 +15,7 @@ cache/lm-studio/  # Corrigido: "In-studio" → "lm-studio"
 
 # Ignorar arquivos JSON em qualquer subdiretório
 **/*.json  # Corrigido: "*v/*, json" → "**/*.json"
+
+# Ignorar arquivos de variáveis pessoais
+*.tfvars
+*.tfvars.json
