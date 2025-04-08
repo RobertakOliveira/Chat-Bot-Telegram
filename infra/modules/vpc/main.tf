@@ -1,5 +1,6 @@
-# Esse arquivo contém a definição do módulo VPC, que cria uma VPC com sub-redes públicas e privadas.
-# O módulo é configurado para ser reutilizável e parametrizável, permitindo que diferentes ambientes sejam criados com facilidade.
+# Modulo VPC para o projeto Chatbot
+# Este módulo cria uma VPC e sub-rede pública para o projeto Chatbot.
+
 
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
@@ -9,15 +10,20 @@ resource "aws_vpc" "main" {
   tags = merge(
     var.common_tags,
     {
-      Name = "vpc-chatbot-${var.environment}"
+      Name = "vpc-chatbot-${var.environment}"  # Corrigido: ${} em vez de $[]
     }
   )
 }
 
 resource "aws_subnet" "public" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = cidrsubnet(var.vpc_cidr, 8, 1)
-  availability_zone = "${var.aws_region}a"
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, 1)  # Corrigido: função cidrsubnet
+  availability_zone = "${var.aws_region}a"  # Corrigido: ${} e sintaxe AZ
 
-  tags = merge(var.common_tags, { Name = "subnet-public-${var.environment}" })
+  tags = merge(
+    var.common_tags, 
+    { 
+      Name = "subnet-public-${var.environment}" 
+    }
+  )
 }
