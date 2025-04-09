@@ -70,3 +70,9 @@ variable "vpc_cidr" {
     error_message = "Use notação CIDR válida (ex: 10.0.0.0/16)."
   }
 }
+
+# ID da instância EC2 que será monitorada
+variable "instance_id" {
+  description = "ID da instância EC2 (para métricas e alarms)"
+  type        = string
+}
