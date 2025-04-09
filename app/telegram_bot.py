@@ -31,6 +31,7 @@ async def new_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global MENSAGENS
     MENSAGENS.clear()
     await update.message.reply_text("🧹 Todas as mensagens foram apagadas! Novo chat iniciado.")
+    context.user_data["aguardando_mensagem"] = False
     await start(update, context)
 
 # Handler do /sendmessage
