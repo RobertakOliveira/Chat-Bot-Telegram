@@ -64,8 +64,9 @@ async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def handle_media_error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data.get("aguardando_mensagem"):
         await update.message.reply_text(
-            "❌ **Erro:** Este bot só aceita mensagens de texto.\n"
-            "Por favor, digite uma mensagem ou use /start para voltar ao menu."
+            "⚠️ Este bot só aceita mensagens de texto.\n\n"
+            "📝 Digite sua mensagem:\n"
+            "❌ /cancel - Cancelar envio"
         )
         # Mantém o estado "aguardando_mensagem" para tentar novamente
 
