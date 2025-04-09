@@ -35,8 +35,20 @@ async def new_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Handler do /sendmessage
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("📝 Digite sua mensagem:")
+    await update.message.reply_text(
+        "📝 Digite sua mensagem:\n"
+        "❌ /cancel - Cancelar envio"
+    )
     context.user_data["aguardando_mensagem"] = True
+
+# Handler para /cancel
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if context.user_data.get("aguardando_mensagem"):
+        context.user_data["aguardando_mensagem"] = False
+        await update.message.reply_text("🚫 Envio cancelado.")
+        await start(update, context)
+    else:
+        await update.message.reply_text("ℹ️ Nenhuma operação para cancelar.")
 
 # Handler para mensagens de texto (após /sendmessage)
 async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -75,6 +87,8 @@ def main():
     application.add_handler(CommandHandler("sendmessage", send_message))
     application.add_handler(CommandHandler("showmessage", show_messages))
     application.add_handler(CommandHandler("newchat", new_chat))
+    application.add_handler(CommandHandler("cancel", cancel))
+
 
     # Handler para mensagens de TEXTO (após /sendmessage)
     application.add_handler(
