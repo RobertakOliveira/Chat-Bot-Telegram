@@ -3,3 +3,6 @@ langchain-core>=0.1.33
 langchain>=0.1.11
 langchain-aws>=0.1.0
 python-telegram-bot==22.0.0
+chromadb 
+boto3 
+pypdf
