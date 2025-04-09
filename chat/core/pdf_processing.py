@@ -2,12 +2,11 @@
 import os
 import re
 import tempfile
-from typing import List, Dict, Any
+from typing import List
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from chat.utils.aws_clients import s3_client
-from chat.core.bedrock_embeddings import BedrockEmbeddingHandler
 from chat.utils.config import config
 
 
@@ -53,54 +52,37 @@ class LegalTextProcessor:
         return documents
 
 
-def process_pdf_from_s3(bucket: str, key: str) -> Dict[str, Any]:
-    """Processa um PDF do S3 e retorna estrutura pronta para embeddings"""
+def process_pdf_from_s3(bucket: str, key: str) -> List[Document]:
+    """Processa um PDF do S3 e retorna lista de documentos (chunks)"""
     with tempfile.NamedTemporaryFile(suffix=".pdf") as tmp_file:
         s3_client.download_file(bucket, key, tmp_file.name)
         processor = LegalTextProcessor()
-        documents = processor.process_pdf(tmp_file.name)
-
-        return {
-            "documents": documents,
-            "source": key,
-            "bucket": bucket
-        }
+        return processor.process_pdf(tmp_file.name)
 
 
-def generate_embeddings_for_pdfs(bucket: str, prefix: str = "") -> None:
-    """Processa todos os PDFs no bucket e gera embeddings"""
-    pdfs = [obj["Key"] for obj in s3_client.list_objects(Bucket=bucket, Prefix=prefix).get("Contents", [])
+def process_all_pdfs_from_s3(bucket: str, prefix: str = "") -> List[Document]:
+    """Processa todos os PDFs no bucket S3 e retorna chunks consolidados"""
+    pdfs = [obj["Key"]
+            for obj in s3_client.list_objects(Bucket=bucket, Prefix=prefix).get("Contents", [])
             if obj["Key"].lower().endswith(".pdf")]
 
-    if not pdfs:
-        print("Nenhum PDF encontrado para processamento")
-        return
-
-    embedding_generator = BedrockEmbeddingHandler()
+    all_documents = []
 
     for pdf_key in pdfs:
-        print("===========================================")
-        print(f"\nIniciando processamento do PDF: {pdf_key}")
-        print("===========================================")
         try:
-            result = process_pdf_from_s3(bucket, pdf_key)
-
-            # Mantém a estrutura original de pastas, apenas troca "juridicos" por "juridicos-embeddings"
-            embedding_base_path = pdf_key.replace(
-                "juridicos/", "juridicos-embeddings/").replace(".pdf", "")
-
-            for i, doc in enumerate(result["documents"]):
-                # Nome do arquivo mantendo o padrão anterior
-                s3_path = f"{embedding_base_path}_p{doc.metadata['page_number']}_c{i}.json"
-
-                embedding_generator.generate_embedding(
-                    text=doc.page_content,
-                    s3_bucket_name=bucket,
-                    final_path=s3_path,
-                    metadata=doc.metadata
-                )
-                print(f"Embedding salvo em: s3://{bucket}/{s3_path}")
-
+            documents = process_pdf_from_s3(bucket, pdf_key)
+            all_documents.extend(documents)
+            print(f"Processado: {pdf_key} | Chunks gerados: {len(documents)}")
         except Exception as e:
             print(f"Erro processando {pdf_key}: {str(e)}")
             continue
+
+    return all_documents
+
+
+def process_single_pdf_from_s3(bucket: str, key: str) -> List[Document]:
+    """Processa APENAS 1 PDF do S3 e retorna seus chunks"""
+    with tempfile.NamedTemporaryFile(suffix=".pdf") as tmp_file:
+        s3_client.download_file(bucket, key, tmp_file.name)
+        processor = LegalTextProcessor()
+        return processor.process_pdf(tmp_file.name)
