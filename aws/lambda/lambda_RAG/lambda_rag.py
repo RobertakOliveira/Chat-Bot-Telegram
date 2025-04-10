@@ -27,7 +27,11 @@ class BedrockEmbeddings(Embeddings):
 
     def _get_embedding(self, text: str) -> list[float]:
         # Prepara o payload; aqui pode ser necessário adaptar o formato do payload conforme a documentação atual do serviço
-        payload = {"text": text}
+        payload = {
+            "inputText": text,
+            "dimensions": 512,
+            "normalize": True
+        }
         response = self.client.invoke_model(
             modelId=self.model_id,
             body=json.dumps(payload),
