@@ -29,10 +29,11 @@ class BedrockEmbeddings(Embeddings):
         # Prepara o payload; aqui pode ser necessário adaptar o formato do payload conforme a documentação atual do serviço
         payload = {"text": text}
         response = self.client.invoke_model(
-            ModelId=self.model_id,
-            Body=json.dumps(payload),
-            ContentType='application/json'
+            modelId=self.model_id,
+            body=json.dumps(payload),
+            contentType="application/json"
         )
+
         result_str = response["Body"].read().decode("utf-8")
         result = json.loads(result_str)
         # Extraia o embedding da resposta. Ajuste a extração conforme o retorno real do serviço.
@@ -67,10 +68,11 @@ class BedrockLLM(LLM):
     def _call(self, prompt: str, stop: list[str] = None) -> str:
         payload = {"prompt": prompt}
         response = self.client.invoke_model(
-            ModelId=self.model_id,
-            Body=json.dumps(payload),
-            ContentType="application/json"
+            modelId=self.model_id,
+            body=json.dumps(payload),
+            contentType="application/json"
         )
+
         result_str = response["Body"].read().decode("utf-8")
         result = json.loads(result_str)
         # Ajuste conforme o formato de saída do modelo Bedrock para geração de texto
