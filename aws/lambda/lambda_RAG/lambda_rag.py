@@ -38,7 +38,7 @@ class BedrockEmbeddings(Embeddings):
             contentType="application/json"
         )
 
-        result_str = response["Body"].read().decode("utf-8")
+        result_str = response["body"].read().decode("utf-8")
         result = json.loads(result_str)
         # Extraia o embedding da resposta. Ajuste a extração conforme o retorno real do serviço.
         embedding = result.get("embedding", [])
