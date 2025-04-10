@@ -1,0 +1,5 @@
+boto3>=1.26.0
+langchain>=0.1.0
+chromadb>=0.4.0
+pypdf>=3.10.0
+pdfminer.six>=20221105
