@@ -2,11 +2,11 @@ import os
 import json
 import boto3
 import time
-from langchain.document_loaders import DirectoryLoader, PyPDFLoader
+from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
 from langchain.chains import RetrievalQA
-from langchain.llms import LLM
+from langchain.llms.base import LLM
 from langchain.embeddings.base import Embeddings
 
 #######################################
