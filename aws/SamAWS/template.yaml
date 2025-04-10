@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Template para Lambda com acesso CRUD a um bucket S3 e acesso à Bedrock
+ 
+Resources:
+  MyLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/              # Diretório onde está o código da função Lambda
+      Handler: app.lambda_handler   # Nome do arquivo e handler (ex.: app.py com a função lambda_handler)
+      Runtime: python3.12            # Ambiente de execução, pode ser ajustado conforme sua linguagem
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref bucketsprintbernardoteste
+        - PolicyName: BedrockAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel   # Permite invocar modelos do AWS Bedrock
+                Resource: "*"           # Ajuste o Resource se desejar restringir a determinados ARNs
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref bucketsprintbernardoteste
+ 
+  MyS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: bucketsprintbernardoteste   # Substitua por um nome único para o bucket
