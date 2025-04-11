@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Template para Lambda com acesso ao S3 e Bedrock
+
+Resources:
+  MyLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: aws/
+      Handler: app.lambda_handler
+      Runtime: python3.10
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref MyS3Bucket
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref MyS3Bucket
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: BedrockAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                Resource: "*"
+
+  MyS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: sprint-7-grupo-5
