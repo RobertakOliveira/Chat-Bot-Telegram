@@ -1,24 +1,5 @@
 import json
-import urllib3
-
-#token do bot
-BOT_TOKEN="SEU-TOKEN-AQUI"
-
-#resposta para cada request enviado pelo usuario do bot
-def sendReply(chat_id, message):
-    reply = {
-        "chat_id": chat_id,
-        "text": message#retorna a mensagem enviada pelo usuario
-    }
-
-    http = urllib3.PoolManager()
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    encoded_data = json.dumps(reply).encode('utf-8')
-    http.request('POST', url, body=encoded_data, headers={'Content-Type': 'application/json'})
-    #print para monitorar o retorno do bot
-    print(f"*** Reply : {encoded_data}")
-
-#função principal que recebe o evento do telegram extraindo a mensagem enviada pelo usuario.
+from send_Reply  import sendReply
 def lambda_handler(event, context):
     body = json.loads(event['body'])
 
@@ -34,7 +15,6 @@ def lambda_handler(event, context):
     print(json.dumps(body))
 
     reply_message = f"Reply to {message_text}"
-
     sendReply(chat_id, reply_message)
 
     return {
