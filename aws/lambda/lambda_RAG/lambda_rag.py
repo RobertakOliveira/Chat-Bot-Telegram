@@ -5,9 +5,15 @@ import time
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
-from langchain.chains import RetrievalQA
+from langchain.chains import create_retrieval_chain
 from langchain.llms.base import LLM
+from pydantic import PrivateAttr
 from langchain.embeddings.base import Embeddings
+
+# Importação para criação da chain de combinação de documentos
+from langchain.chains.combine_documents import create_stuff_documents_chain
+# Importa o PromptTemplate para definir o prompt customizado
+from langchain.prompts import PromptTemplate
 
 #######################################
 # 1. Wrapper customizado para embeddings usando o modelo amazon.titan-embed-text-v2:0
@@ -16,17 +22,14 @@ from langchain.embeddings.base import Embeddings
 class BedrockEmbeddings(Embeddings):
     """
     Implementa a interface de embeddings do LangChain utilizando o Amazon Bedrock.
-    Aqui usamos o modelo de embeddings 'amazon.titan-embed-text-v2:0' para processar os textos
-    dos documentos jurídicos.
+    Utiliza o modelo 'amazon.titan-embed-text-v2:0' para processar textos dos documentos jurídicos.
     """
     def __init__(self, model_id: str = "amazon.titan-embed-text-v2:0", region: str = "us-east-1"):
         self.model_id = model_id
         self.region = region
-        # Cria o cliente para chamada ao serviço Bedrock
         self.client = boto3.client('bedrock-runtime', region_name=self.region)
 
     def _get_embedding(self, text: str) -> list[float]:
-        # Prepara o payload; aqui pode ser necessário adaptar o formato do payload conforme a documentação atual do serviço
         payload = {
             "inputText": text,
             "dimensions": 512,
@@ -37,10 +40,8 @@ class BedrockEmbeddings(Embeddings):
             body=json.dumps(payload),
             contentType="application/json"
         )
-
         result_str = response["body"].read().decode("utf-8")
         result = json.loads(result_str)
-        # Extraia o embedding da resposta. Ajuste a extração conforme o retorno real do serviço.
         embedding = result.get("embedding", [])
         return embedding
 
@@ -55,33 +56,45 @@ class BedrockEmbeddings(Embeddings):
 #######################################
 
 class BedrockLLM(LLM):
-    """
-    Implementa um LLM que utiliza o Amazon Bedrock para a geração de respostas.
-    (Caso você tenha um modelo específico para geração de texto, pode ajustar aqui.
-     Muitas vezes, na mesma conta da AWS, o serviço pode oferecer modelos de chat ou de completions.)
-    """
-    def __init__(self, model_id: str, region: str = "us-east-1"):
-        self.model_id = model_id
-        self.region = region
-        self.client = boto3.client("bedrock-runtime", region_name=self.region)
+    # Declaração dos campos para o Pydantic
+    model_id: str = "amazon.titan-text-premier-v1:0"
+    region: str = "us-east-1"
+    _client: any = PrivateAttr()
 
     @property
     def _llm_type(self) -> str:
         return "bedrock"
 
+    def __init__(self, **data):
+        super().__init__(**data)
+        self._client = boto3.client("bedrock-runtime", region_name=self.region)
+
     def _call(self, prompt: str, stop: list[str] = None) -> str:
-        payload = {"prompt": prompt}
-        response = self.client.invoke_model(
+        payload = {
+            "inputText": prompt,
+            "textGenerationConfig": {
+                "maxTokenCount": 3072,
+                "stopSequences": stop or [],
+                "temperature": 0.7,
+                "topP": 0.9
+            }
+        }
+        response = self._client.invoke_model(
             modelId=self.model_id,
             body=json.dumps(payload),
-            contentType="application/json"
+            contentType="application/json",
+            accept="application/json"
         )
-
-        result_str = response["Body"].read().decode("utf-8")
+        result_str = response["body"].read().decode("utf-8")
         result = json.loads(result_str)
-        # Ajuste conforme o formato de saída do modelo Bedrock para geração de texto
-        generated_text = result.get("generated_text", "")
+        # Debug: imprime a resposta completa para ver sua estrutura
+        #print("DEBUG - Resposta completa:", result)
+        generated_text = ""
+        # Se o campo 'results' existir e não estiver vazio, extrai o outputText do primeiro resultado.
+        if "results" in result and len(result["results"]) > 0:
+            generated_text = result["results"][0].get("outputText", "")
         return generated_text
+
 
 #######################################
 # 3. Pipeline RAG adaptado para documentos jurídicos
@@ -89,7 +102,6 @@ class BedrockLLM(LLM):
 
 def main():
     # --- Carregamento dos PDFs jurídicos usando DirectoryLoader e PyPDFLoader.
-    # Assumimos que a estrutura de pastas (com subpastas) esteja dentro da pasta './dataset'
     dataset_path = "./dataset"
     loader = DirectoryLoader(dataset_path, glob="**/*.pdf", loader_cls=PyPDFLoader)
     documents = loader.load()
@@ -99,40 +111,56 @@ def main():
         print("Nenhum documento encontrado. Verifique o caminho do dataset!")
         return
 
-    # --- (Opcional) Pré-processamento: para documentos jurídicos pode ser interessante
-    # remover quebras de linhas excessivas ou normalizar caracteres. Aqui você pode aplicar funções adicionais.
-
     # --- Divisão dos textos em chunks
-    # O tamanho dos chunks e a sobreposição podem ser ajustados para garantir que partes importantes do texto não sejam truncadas.
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    # O método split_documents preserva os metadados (como nome do arquivo e caminho)
     docs = text_splitter.split_documents(documents)
     print(f"{len(docs)} chunks gerados.")
 
-    # --- Criação do índice no Chroma utilizando os embeddings do Amazon Bedrock (modelo amazon.titan-embed-text-v2:0)
-    embeddings = BedrockEmbeddings()  # O modelo já vem definido como 'amazon.titan-embed-text-v2:0'
-    # persist_directory permite salvar o índice para futuras consultas sem precisar reprocessar tudo
+    # --- Criação do índice no Chroma utilizando os embeddings do Amazon Bedrock
+    embeddings = BedrockEmbeddings()
     vectorstore = Chroma.from_documents(docs, embeddings, persist_directory="chroma_db")
     print("Indexação concluída.")
 
-    # --- Configuração do retriever para buscar os chunks mais relevantes
+    # --- Configuração do retriever
     retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
 
     # --- Configuração do LLM para geração da resposta final via Bedrock.
-    # Substitua o model_id abaixo com o modelo adequado para geração (se diferente do de embeddings).
-    bedrock_llm = BedrockLLM(model_id="seu-modelo-bedrock-llm", region="us-east-1")
+    bedrock_llm = BedrockLLM()
 
-    # --- Criação da cadeia de Recuperação (RAG) com LangChain
-    qa_chain = RetrievalQA(llm=bedrock_llm, retriever=retriever)
-    
-    # --- Exemplo de consulta: como os documentos são jurídicos, a pergunta pode ser,
-    # por exemplo, “Quais os argumentos apresentados sobre inadmissibilidade do recurso?”
+    # --- Criação de um prompt customizado para a tarefa jurídica
+    custom_template = (
+        "Você é um assistente jurídico altamente especializado. Utilize as informações contidas nos trechos "
+        "dos documentos fornecidos para responder a pergunta a seguir de maneira clara, precisa e fundamentada.\n\n"
+        "Documentos:\n{context}\n\n"
+        "Pergunta:\n{input}\n\n"
+        "Sua resposta deve:\n"
+        "- Resumir os argumentos principais apresentados nos documentos.\n"
+        "- Destacar os pontos relevantes relativos à inadmissibilidade do recurso.\n"
+        "- Utilizar uma linguagem formal e técnica, adequada ao meio jurídico.\n"
+        "- Indicar, se necessário, que não foi possível encontrar uma resposta completa, caso a informação não esteja presente.\n\n"
+        "Resposta:"
+    )
+    # Cria o objeto PromptTemplate especificando os placeholders esperados
+    custom_prompt = PromptTemplate(
+        template=custom_template,
+        input_variables=["context", "input"]
+    )
+
+    # --- Criação da chain de combinação de documentos utilizando o prompt customizado
+    combine_docs_chain = create_stuff_documents_chain(bedrock_llm, custom_prompt)
+
+    # --- Criação da chain de Recuperação (RAG) utilizando o retriever e a chain de combinação
+    qa_chain = create_retrieval_chain(retriever, combine_docs_chain)
+
+    # --- Exemplo de consulta
     query = "Quais os argumentos apresentados sobre inadmissibilidade do recurso nos documentos?"
     print(f"\nConsulta: {query}\n")
     
-    # Executa a cadeia para obter a resposta final
-    resposta = qa_chain.run(query)
-    print("Resposta gerada:\n", resposta)
+    # Invoca a chain RAG com a consulta; o input é passado via dicionário com a chave "input"
+    resposta = qa_chain.invoke({"input": query})
+    # Extraia somente a resposta final
+    final_answer = resposta.get("answer", "")
+    print("Resposta gerada:\n", final_answer)
 
 if __name__ == "__main__":
     main()
