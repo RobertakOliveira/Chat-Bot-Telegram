@@ -8,3 +8,24 @@ common_tags = {
   ManagedBy   = "Terraform"
   Environment = "dev"             # Ou 'staging'/'prod'
 }
+
+
+
+## Configuração Inicial
+
+#1. Copie o template:
+   ```bash
+   cp exemplo.tfvars terraform.tfvars
+
+
+Edite com seus dados locais
+
+Execute:
+   terraform plan -var-file="terraform.tfvars"
+
+
+   ### Por que essa abordagem?
+- **Segurança**: Mantém dados pessoais fora do repositório
+- **Onboarding**: Auxilia novos membros com template pronto
+- **Padronização**: Garante que todos usem a mesma estrutura
+- **Flexibilidade**: Cada dev pode ter seu próprio `.tfvars` local
