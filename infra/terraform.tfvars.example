@@ -1,0 +1,10 @@
+# exemplo.tfvars - Preencha com seus valores locais
+aws_profile = "SEU-PERFIL-AQUI"  # Perfil configurado na AWS CLI/SSO
+aws_region  = "us-east-1"         # Região AWS
+
+common_tags = {
+  Project     = "Chatbot"
+  CostCenter  = "Chatbot" 
+  ManagedBy   = "Terraform"
+  Environment = "dev"             # Ou 'staging'/'prod'
+}
