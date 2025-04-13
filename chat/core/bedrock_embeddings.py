@@ -8,7 +8,7 @@ import time
 import logging
 from typing import List
 from langchain_aws import BedrockEmbeddings
-from chat.utils.aws_clients import bedrock_runtime
+from chat.utils.aws_clients import bedrock_runtime, AWS_REGION
 from chat.utils.config import config
 
 
@@ -18,7 +18,8 @@ class BedrockEmbeddingHandler:
     def __init__(self):
         self.embeddings = BedrockEmbeddings(
             client=bedrock_runtime,
-            model_id=config.BEDROCK_MODEL_ID
+            model_id=config.BEDROCK_MODEL_ID,
+            region_name=AWS_REGION
         )
 
     def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
@@ -43,6 +44,17 @@ class BedrockEmbeddingHandler:
         except Exception as e:
             logging.error(f"Falha na geração de embedding: {str(e)}")
             raise
+
+    def embed_documents(self, documents: List[Document]) -> List[Document]:
+        """Novo: Gera embeddings para uma lista de LangChain Documents"""
+        texts = [doc.page_content for doc in documents]
+        embeddings = self.generate_embeddings(texts)
+
+        # Adiciona embeddings aos metadados
+        for doc, embedding in zip(documents, embeddings):
+            doc.metadata["embedding"] = embedding
+
+        return documents
 
 
 def initialize_embedding_service():
