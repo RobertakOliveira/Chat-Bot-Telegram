@@ -65,7 +65,6 @@ resultados_test.txt
 
 # Terraform
 .terraform/
-**/.terraform.lock.hcl
 *.tfstate
 *.tfstate.*
 *.tfstate.backup
