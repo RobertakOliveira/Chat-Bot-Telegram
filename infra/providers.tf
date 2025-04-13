@@ -1,9 +1,34 @@
-# Configuração genérica do provider (sem credenciais) assim não será necessário repetir o provider em cada módulo
+provider "aws" {
+  region  = var.aws_region
+  profile = "KATCILANE-SOUZA" # Use o perfil que você configurou na AWS CLI
+  
+  default_tags {
+    tags = {
+      Environment = var.environment
+      Owner       = var.owner_tag
+      Project     = "chatbot-juridico"
+      ManagedBy   = "Terraform"
+    }
+  }
+}
 
-provider "aws" {      # O provider AWS é utilizado para interagir com os serviços da AWS.
-    
-    region = var.aws_region
-    # A configuração do provider AWS não deve conter credenciais sensíveis, como access_key e secret_key.
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
+  }
 
-    profile = "sso-poweruser"  # Opcional: se usar AWS SSO
+  backend "s3" {
+    bucket         = "chatbot-terraform-state-katcilane"
+    key            = "terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    use_lockfile   = true  # Substitui o parâmetro obsoleto
+  }
 }
