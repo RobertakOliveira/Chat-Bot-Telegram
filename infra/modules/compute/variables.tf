@@ -30,7 +30,7 @@ variable "ami_id" {
 variable "instance_type" {
   description = "Tipo de instância EC2"
   type        = string
-  default     = "t3.medium"
+  default     = "t2.micro"
   validation {
     condition     = can(regex("^[t][23][a-z]*\\.", var.instance_type))
     error_message = "Use tipos t3 ou t2 com tamanho adequado."
@@ -52,10 +52,12 @@ variable "owner_tag" {
 variable "common_tags" {
   description = "Tags comuns para todos os recursos"
   type        = map(string)
-  default     = {
-    Project     = "chatbot-juridico"
+  default = {
+    Project     = "TerraformTest"      
+    CostCenter  = "T123"              
     ManagedBy   = "terraform"
     Environment = "dev"
+    Owner       = "katcilane"      # ATENÇÃO: Substituir pelo nome do owner/usuário local
     Repository  = "https://github.com/Compass-pb-aws-2025-JANEIRO/sprints-7-8-pb-aws-janeiro"
   }
 }
@@ -71,8 +73,25 @@ variable "vpc_cidr" {
   }
 }
 
-# ID da instância EC2 que será monitorada
-variable "instance_id" {
-  description = "ID da instância EC2 (para métricas e alarms)"
+variable "subnet_id" {
+  description = "ID da sub-rede"
   type        = string
+  validation {
+    condition     = can(regex("^subnet-", var.subnet_id))
+    error_message = "O subnet_id deve começar com 'subnet-'"
+  }
 }
+
+
+
+
+variable "vpc_id" {
+  description = "ID da VPC"
+  type        = string
+  validation {
+    condition     = can(regex("^vpc-", var.vpc_id))
+    error_message = "O vpc_id deve começar com 'vpc-'"
+  }
+}
+
+
