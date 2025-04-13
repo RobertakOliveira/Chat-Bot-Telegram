@@ -1,31 +1,31 @@
-# exemplo.tfvars - Preencha com seus valores locais
-aws_profile = "SEU-PERFIL-AQUI"  # Perfil configurado na AWS CLI/SSO
-aws_region  = "us-east-1"         # Região AWS
+# # exemplo.tfvars - Preencha com seus valores locais
+ aws_profile = "SEU-PERFIL-AQUI"  # Perfil configurado na AWS CLI/SSO
+ aws_region  = "us-east-1"         # Região AWS
 
-common_tags = {
-  Project     = "Chatbot"
-  CostCenter  = "Chatbot" 
-  ManagedBy   = "Terraform"
-  Environment = "dev"             # Ou 'staging'/'prod'
-}
-
-
-
-## Configuração Inicial
-
-#1. Copie o template:
-   ```bash
-   cp exemplo.tfvars terraform.tfvars
+ common_tags = {
+   Project     = "Chatbot"
+   CostCenter  = "Chatbot" 
+   ManagedBy   = "Terraform"
+   Environment = "dev"             # Ou 'staging'/'prod'
+ }
 
 
-Edite com seus dados locais
 
-Execute:
-   terraform plan -var-file="terraform.tfvars"
+# ## Configuração Inicial
+
+# #1. Copie o template:
+#    ```bash
+#    cp exemplo.tfvars terraform.tfvars
 
 
-   ### Por que essa abordagem?
-- **Segurança**: Mantém dados pessoais fora do repositório
-- **Onboarding**: Auxilia novos membros com template pronto
-- **Padronização**: Garante que todos usem a mesma estrutura
-- **Flexibilidade**: Cada dev pode ter seu próprio `.tfvars` local
+# Edite com seus dados locais
+
+# Execute:
+#    terraform plan -var-file="terraform.tfvars"
+
+
+#    ### Por que essa abordagem?
+# - **Segurança**: Mantém dados pessoais fora do repositório
+# - **Onboarding**: Auxilia novos membros com template pronto
+# - **Padronização**: Garante que todos usem a mesma estrutura
+# - **Flexibilidade**: Cada dev pode ter seu próprio `.tfvars` local
