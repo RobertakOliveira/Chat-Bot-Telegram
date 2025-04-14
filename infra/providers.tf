@@ -1,7 +1,5 @@
 provider "aws" {
-  region  = var.aws_region
-  profile = "KATCILANE-SOUZA" # Use o perfil que você configurou na AWS CLI
-  
+  region = var.aws_region
   default_tags {
     tags = {
       Environment = var.environment
@@ -24,11 +22,12 @@ terraform {
     }
   }
 
-  backend "s3" {
+   backend "s3" {
     bucket         = "chatbot-terraform-state-katcilane"
-    key            = "terraform.tfstate"
+    key            = "chatbot-juridico/${var.environment}/terraform.tfstate" # Melhor organização
     region         = "us-east-1"
     encrypt        = true
-    use_lockfile   = true  # Substitui o parâmetro obsoleto
+    dynamodb_table = "terraform-locks-${var.owner_tag}" # Integração com o lock
+    # Removido use_lockfile (não é um parâmetro válido do backend S3)
   }
 }
