@@ -42,11 +42,6 @@ variable "force_destroy" {
   default     = false
 }
 
-variable "kms_key_arn" {
-  description = "ARN da chave KMS para encriptação (ex.: arn:aws:kms:us-east-1:123456789012:key/abcd1234...)"
-  type        = string
-  default     = "" # Se vazio, usará a chave padrão da AWS
-}
 
 # =============================================
 # VARIÁVEIS DE LOGGING E MONITORAMENTO
