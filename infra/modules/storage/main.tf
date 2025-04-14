@@ -48,6 +48,23 @@ resource "aws_s3_bucket" "docs" {
   }
 }
 
+
+
+resource "aws_s3_object" "pdfs" {
+  for_each = fileset(var.dataset_path, "*.pdf") # Pasta local com PDFs
+  bucket   = aws_s3_bucket.rag_bucket.id
+  key      = "juridicos/${each.value}"
+  source   = "${var.dataset_path}/${each.value}"
+}
+ 
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
+
+
+  
+
 # =============================================
 # CONFIGURAÇÕES DO BUCKET (AES256)
 # =============================================

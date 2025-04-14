@@ -29,3 +29,9 @@ module "compute" {
   aws_region    = var.aws_region
   
 }
+
+module "s3" {
+  source       = "./modules/s3"
+  dataset_path = "./juridicos"
+  project_name = local.project_name
+}

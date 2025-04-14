@@ -126,3 +126,8 @@ variable "sensitivity_level" {
     error_message = "Valor deve ser: confidential, restricted, internal ou public."
   }
 }
+
+variable "dataset_path" {
+  type        = string
+  description = "Caminho local para os PDFs que serão enviados para o S3"
+}
