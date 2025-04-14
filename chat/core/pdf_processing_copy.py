@@ -2,7 +2,7 @@
 import os
 import re
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
@@ -22,7 +22,7 @@ class LegalMetadataExtractor:
 
     # Padrão que cobre todos os tipos de processos
     PROCESSO_PATTERN = re.compile(
-        r'(?:Processo|PROCESSO|RECURSO|AGRAVO|EMBARGOS)[\sNº°:-]*([\d\.-]+)(?:\s*-?\s*[A-Z]{2})?',
+        r'(?:Processo|PROCESSO|RECURSO|AGRAVO|EMBARGOS)[\sNº°:-]*([\d]{7}-?[\d]{2}\.?[\d]{4}\.?[\d]{1}\.?[\d]{2}\.?[\d]{4})',
         re.IGNORECASE
     )
 
@@ -34,19 +34,36 @@ class LegalMetadataExtractor:
 
     # Tribunais estaduais e federais
     TRIBUNAL_PATTERNS = [
-        (r'TRIBUNAL\s+DE\s+JUSTIÇA\s+(?:DO|DE)\s+([A-Z]+)', 'TJ'),
+        (r'TRIBUNAL\s+DE\s+JUSTIÇA\s+(?:DO|DE)\s+([A-Z]{2})', 'TJ'),
         (r'TJ-?([A-Z]{2})', 'TJ'),
-        (r'Superior\s+Tribunal\s+de\s+Justiça', 'STJ'),
-        (r'TRIBUNAL\s+REGIONAL\s+FEDERAL\s+DA\s+(\d+ª?\s+REGIÃO)', 'TRF')
+        (r'TRIBUNAL\s+REGIONAL\s+FEDERAL\s+(?:DA\s+)?(\d+ª?\s*REGI[ÃA]O)', 'TRF'),
+        (r'TRF-?(\d+ª?\s*REGI[ÃA]O)', 'TRF'),
+        (r'(Superior\s*Tribunal\s*de\s*Justiça|STJ)', 'STJ'),
+        (r'(Supremo\s*Tribunal\s*Federal|STF)', 'STF')
     ]
 
     # Tipos documentais consolidados
     DOC_TYPE_PATTERNS = {
-        'acordão_recorrido': re.compile(r'ACÓRDÃO\s+RECORRIDO', re.IGNORECASE),
-        'acordão_embargos': re.compile(r'ACÓRDÃO\s+EMBARGOS', re.IGNORECASE),
-        'decisão_admissibilidade': re.compile(r'DECISÃO\s+ADMISSIBILIDADE', re.IGNORECASE),
-        'recurso_extraordinário': re.compile(r'RECURSO\s+EXTRAORDINÁRIO', re.IGNORECASE),
-        'apelação_cível': re.compile(r'APELAÇÃO\s+CÍVEL', re.IGNORECASE)
+        'acordão_recorrido': [
+            re.compile(r'ACÓRDÃO\s+RECORRIDO', re.IGNORECASE),
+            re.compile(r'JULGADO\s+EM\s+SEGUNDO\s+GRAU', re.IGNORECASE)
+        ],
+        'acordão_embargos': [
+            re.compile(r'ACÓRDÃO\s+EMBARGOS', re.IGNORECASE),
+            re.compile(r'EMBARGOS\s+DE\s+DECLARAÇÃO', re.IGNORECASE)
+        ],
+        'decisão_admissibilidade': [
+            re.compile(r'DECISÃO\s+ADMISSIBILIDADE', re.IGNORECASE),
+            re.compile(r'ANÁLISE\s+DE\s+ADMISSIBILIDADE', re.IGNORECASE)
+        ],
+        'recurso_extraordinário': [
+            re.compile(r'RECURSO\s+EXTRAORDINÁRIO', re.IGNORECASE),
+            re.compile(r'RE\s+nº?\s*\d+', re.IGNORECASE)
+        ],
+        'agravo': [
+            re.compile(r'AGRAVO\s+(INTERNO|REGIMENTAL)', re.IGNORECASE),
+            re.compile(r'AGRAVO\s+EM\s+RECURSO\s+ESPECIAL', re.IGNORECASE)
+        ]
     }
 
     @classmethod
@@ -63,87 +80,116 @@ class LegalMetadataExtractor:
         }
 
         for role, tipo in roles.items():
-            match = re.search(
-                fr'{role.upper()}\s*:([^\n]+)',
-                text,
-                re.IGNORECASE
-            )
-            if match:
-                parties[tipo] = match.group(1).strip()
+            try:
+                match = re.search(
+                    fr'{role.upper()}\s*:([^\n]+)',
+                    text,
+                    re.IGNORECASE
+                )
+                if match:
+                    party_name = match.group(1).strip()
+                    party_name = re.sub(
+                        r'(ADVOGAD[OA]|PROCURADOR).*$', '', party_name, flags=re.IGNORECASE)
+                    party_name = re.sub(r'\s+', ' ', party_name).strip()
+                    parties[tipo] = party_name
+            except Exception as e:
+                logging.warning(f"Erro ao extrair parte {role}: {str(e)}")
+                continue
 
         return parties
 
     @classmethod
-    def extract_from_text(cls, text: str) -> Dict[str, str]:
+    def extract_from_text(cls, text: str, filename: str = "") -> Dict[str, str]:
         """Extrai metadados jurídicos com tratamento de erros"""
         metadata = {}
         try:
             # 1. Extrai número do processo com análise contextual
-            metadata.update(cls._extract_process_number(text))
+            process_meta = cls._extract_process_number(text)
+            if process_meta:
+                metadata.update(process_meta)
 
             # 2. Identifica tipo documental com fallback
             metadata['doc_subtype'] = cls._identify_document_type(text)
 
             # 3. Extrai tribunal com padrão mais abrangente
-            metadata.update(cls._extract_court_info(text))
-            metadata.update(cls._extract_parties(text))
+            court_meta = cls._extract_court_info(text)
+            metadata.update(court_meta)
 
         except Exception as e:
-            logging.warning(f"Falha na extração de metadados: {str(e)}")
+            logging.warning(f"🚨 Falha na extração de metadados: {str(e)}")
 
         return metadata
 
     @classmethod
-    def _extract_court_info(cls, text: str) -> Dict[str, str]:
-        """Versão melhorada para identificar tribunais"""
-        patterns = [
-            (r'TJ-?([A-Z]{2})', 'TJ'),  # Padrão TJSP/TJ-SP
-            (r'Tribunal\s+de\s+Justiça\s+de\s+([A-Z]{2})', 'TJ')
-        ]
-
-        for pattern, prefix in patterns:
-            match = re.search(pattern, text[:3000], re.IGNORECASE)
-            if match:
-                return {
-                    'jurisdiction': f"{prefix}-{match.group(1).upper()}",
-                    'court_level': prefix
-                }
-        return {'jurisdiction': 'NÃO IDENTIFICADO'}
-
-    @classmethod
     def _extract_process_number(cls, text: str) -> Dict[str, str]:
         """Extrai número do processo com validação"""
-        match = cls.PROCESSO_PATTERN.search(
-            text[:3000])  # Amplia área de busca
-        if match:
-            process_num = match.group(1).strip()
-            if cls._validate_process_number(process_num):
-                return {'process_number': process_num}
+        try:
+            match = cls.PROCESSO_PATTERN.search(text[:3000])
+            if match:
+                process_num = match.group(1).strip()
+                if cls._validate_process_number(process_num):
+                    return {'process_number': process_num}
+        except Exception as e:
+            logging.warning(f"🚨 Erro ao extrair número do processo: {str(e)}")
         return {}
 
     @classmethod
     def _validate_process_number(cls, number: str) -> bool:
         """Valida formato básico de número de processo"""
-        return len(number) >= 10 and any(c.isdigit() for c in number)
+        try:
+            return len(number) >= 10 and any(c.isdigit() for c in number)
+        except:
+            return False
 
     @classmethod
-    def _identify_document_type(cls, text: str) -> str:
+    def _identify_document_type(cls, text: str, filename: str = "") -> str:
         """Identifica tipo documental com prioridade"""
-        for doc_type, pattern in cls.DOC_TYPE_PATTERNS.items():
-            if pattern.search(text[:1500]):  # Amplia área de busca
-                return doc_type
-        return 'outros'  # Valor padrão
+        try:
+            # Primeiro tenta pelo conteúdo
+            for doc_type, patterns in cls.DOC_TYPE_PATTERNS.items():
+                for pattern in patterns:
+                    if pattern.search(text[:2000]):
+                        return doc_type
+
+            # 2. Fallback pelo nome do arquivo (mais específico)
+            filename_lower = filename.lower()
+
+            if 'acordao-recorrido' in filename_lower:
+                return 'acordão_recorrido'
+            elif 'acordao-embargos' in filename_lower:
+                return 'acordão_embargos'
+            elif 'recurso-extraordinario' in filename_lower:
+                return 'recurso_extraordinário'
+            elif 'decisao-admissibilidade' in filename_lower:
+                return 'decisão_admissibilidade'
+            elif 'agravo' in filename_lower:
+                return 'agravo'
+            else:
+                logging.warning(
+                    f"Tipo documental não identificado para: {filename}")
+
+        except Exception as e:
+            logging.warning(f"Erro ao identificar tipo documental: {str(e)}")
+        return 'outros'
 
     @classmethod
     def _extract_court_info(cls, text: str) -> Dict[str, str]:
         """Extrai informações do tribunal"""
-        match = cls.TRIBUNAL_PATTERN.search(text[:5000])
-        if match:
-            return {
-                'jurisdiction': f"TJ-{match.group(1).upper()}",
-                'court_level': 'TJ'
-            }
-        return {'jurisdiction': 'NÃO IDENTIFICADO'}
+        for pattern, prefix in cls.TRIBUNAL_PATTERNS:
+            match = re.search(pattern, text[:5000], re.IGNORECASE)
+            if match:
+                tribunal_name = next((g for g in match.groups() if g), None)
+                if tribunal_name:
+                    # Corrige court_level para TRF
+                    if prefix == 'TRF' or 'TRF' in tribunal_name:
+                        prefix = 'TRF'
+                    return {
+                        'jurisdiction': f"{prefix}-{tribunal_name.strip().upper()}",
+                        'court_level': prefix
+                    }
+        return {'jurisdiction': 'NÃO IDENTIFICADO', 'court_level': 'NÃO IDENTIFICADO'}
+
+# ======================================================================
 
 
 class LegalTextProcessor:
@@ -151,7 +197,7 @@ class LegalTextProcessor:
 
     LEGAL_SEPARATORS = [
         "\nArtigo", "\nParágrafo Único", "\nParágrafo", "\n§", "\nArt. ",
-        "\nLei nº", "\nDECISÃO", "\nVistos,\s", "\n\n", "\n", " ",
+        "\nLei nº", "\nDECISÃO", r"\nVistos,\s", "\n\n", "\n", " ",
     ]
 
     def __init__(self):
@@ -231,16 +277,16 @@ class LegalTextProcessor:
                     chunks = self._split_document(clean_text, metadata)
                     documents.extend(chunks)
                 except Exception as e:
-                    logging.warning(f"Erro processando página: {str(e)}")
+                    logging.warning(f"🚨 Erro processando página: {str(e)}")
                     continue
 
             return documents
         except Exception as e:
-            logging.error(f"Falha no processamento do PDF: {str(e)}")
+            logging.error(f"🚨 Falha no processamento do PDF: {str(e)}")
             return []
 
     def _build_metadata(self, page: Document, text: str) -> Dict[str, Any]:
-        """Constrói metadados com informações jurídicas"""
+        """Constrói metadados com informações jurídicas e filename"""
         base_meta = {
             **page.metadata,
             "page_number": page.metadata.get("page", 0) + 1,
@@ -253,27 +299,16 @@ class LegalTextProcessor:
             "is_first_page": page.metadata.get("page", 0) == 0,
             "has_legal_references": bool(re.search(r'art\.\s+\d+', text))
         }
-        return {**base_meta, **LegalMetadataExtractor.extract_from_text(text)}
+        filename = base_meta['source']
+        return {**base_meta, **LegalMetadataExtractor.extract_from_text(text, filename)}
 
     def _split_document(self, text: str, metadata: Dict) -> List[Document]:
         """Divide o texto preservando estrutura jurídica"""
         try:
             return self.splitter.create_documents([text], [metadata])
         except Exception as e:
-            logging.error(f"Falha ao dividir documento: {str(e)}")
+            logging.error(f"🚨 Falha ao dividir documento: {str(e)}")
             return [Document(page_content=text, metadata=metadata)]
-
-        def _remove_boilerplate(self, text: str) -> str:
-        """Remove textos repetitivos e cabeçalhos/rodapés padrão"""
-        return re.sub(r'Este documento é cópia.*?Tribunal.*?de Justiça.*?\n', '', text, flags=re.IGNORECASE | re.DOTALL)
-
-    def _normalize_legal_references(self, text: str) -> str:
-        """Padroniza citações jurídicas comuns"""
-        return re.sub(r'Art\.?\s*(\d+)', r'Artigo \1', text)
-
-    def _fix_line_breaks(self, text: str) -> str:
-        """Corrige quebras de linha estranhas"""
-        return re.sub(r'(?<!\n)\n(?!\n)', ' ', text)
 
     def process(self, text: str) -> List[Document]:
         """Executa o processamento completo com extração e chunking"""
@@ -319,11 +354,6 @@ def _extract_path_metadata(s3_key: str) -> Dict[str, str]:
     return metadata
 
 
-def _looks_like_process_id(text: str) -> bool:
-    """Heurística para identificar números de processo no caminho"""
-    return (any(c.isdigit() for c in text) and len(text)) >= 10
-
-
 def process_pdf_from_s3(bucket: str, key: str) -> List[Document]:
     """Processa um PDF do S3 com validações, extração de texto, metadados jurídicos e enriquecimento"""
 
@@ -357,18 +387,21 @@ def process_pdf_from_s3(bucket: str, key: str) -> List[Document]:
             processor = LegalTextProcessor()
             extractor = LegalMetadataExtractor()
 
-            metadata = extractor.extract_from_text(full_text)
-            documents = processor.process(full_text)
+            path_meta = _extract_path_metadata(
+                key)  # 1º - Metadados do caminho S3
+            metadata = extractor.extract_from_text(
+                full_text)  # 2º - Metadados do conteúdo
 
-            path_meta = _extract_path_metadata(key)
+            documents = processor.process(full_text)  # Chunking e limpeza
 
             for doc in documents:
                 doc.metadata.update({
                     **metadata,
+                    **path_meta,
                     "source": key,
                     "s3_uri": f"s3://{bucket}/{key}",
-                    "processing_timestamp": datetime.utcnow().isoformat() + "Z",
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "processing_timestamp": datetime.now(timezone.utc).isoformat() + "Z",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "document_language": "pt-BR",
                     "embedding_ready": False,
                     **path_meta,
@@ -376,7 +409,7 @@ def process_pdf_from_s3(bucket: str, key: str) -> List[Document]:
                     "s3_last_modified": head.get('LastModified', '').isoformat()
                 })
 
-            logging.info(f"✅ {key} → {len(documents)} chunks")
+            logging.info(f"⏳ {key} → {len(documents)} chunks")
             return documents
 
         except Exception as e:
@@ -384,12 +417,12 @@ def process_pdf_from_s3(bucket: str, key: str) -> List[Document]:
             return []
 
 
-def list_pdfs_in_bucket(bucket: str, prefix: str = "juridicos/") -> List[Dict]:
+def list_pdfs_in_bucket(bucket: str) -> List[Dict]:
     """Lista todos os PDFs no bucket com paginação"""
     pdfs = []
     paginator = s3_client.get_paginator('list_objects_v2')
 
-    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+    for page in paginator.paginate(Bucket=bucket):
         for obj in page.get('Contents', []):
             if obj['Key'].lower().endswith('.pdf'):
                 pdfs.append({
