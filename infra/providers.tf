@@ -24,10 +24,9 @@ terraform {
 
    backend "s3" {
     bucket         = "chatbot-terraform-state-katcilane"
-    key            = "chatbot-juridico/${var.environment}/terraform.tfstate" # Melhor organização
+    key            = "chatbot-juridico/terraform.tfstate" # Caminho fixo ou mude manualmente por ambiente
     region         = "us-east-1"
     encrypt        = true
-    dynamodb_table = "terraform-locks-${var.owner_tag}" # Integração com o lock
-    # Removido use_lockfile (não é um parâmetro válido do backend S3)
+    dynamodb_table = "terraform-locks" # Nome fixo da tabela
   }
 }

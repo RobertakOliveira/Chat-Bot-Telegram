@@ -60,7 +60,7 @@ resource "aws_security_group" "chatbot_sg" {
 }
 
 # IAM Role para a instância EC2 do Chatbot.
-resource "aws_iam_role" "chatbot_role" {
+resource "aws_iam_role" "chatbot_role" {      
   name = "chatbot-role-${var.environment}"
 
   # Política para permitir que a instância EC2 assuma o papel.
@@ -98,7 +98,7 @@ resource "aws_iam_role_policy" "chatbot_policy" {
         Action   = ["s3:*"],
         Effect   = "Allow",
         Resource = [
-          "arn:aws:s3:::chatbot-docs-${var.owner_tag}-*",
+          "arn:aws:s3:::chatbot-docs-${var.owner_tag}-*",     
           "arn:aws:s3:::chatbot-docs-${var.owner_tag}-*/*"
         ]
       },
