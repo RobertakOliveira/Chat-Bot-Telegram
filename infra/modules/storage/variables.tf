@@ -1,5 +1,5 @@
 # =============================================
-# VARIÁVEIS DO MÓDULO DE STORAGE PARA O CHATBOT
+# VARIÁVEIS PRINCIPAIS DE IDENTIFICAÇÃO
 # =============================================
 
 variable "owner_tag" {
@@ -11,18 +11,6 @@ variable "owner_tag" {
   }
 }
 
-variable "common_tags" {
-  description = "Tags comuns para todos os recursos (padrão: Environment, Owner, Project, ManagedBy)"
-  type        = map(string)
-  default     = {}
-}
-
-variable "create_terraform_state" {
-  description = "Controla a criação dos recursos para Terraform State (bucket S3 e DynamoDB)"
-  type        = bool
-  default     = true
-}
-
 variable "environment" {
   description = "Ambiente de implantação (valores recomendados: dev, staging, prod)"
   type        = string
@@ -32,24 +20,37 @@ variable "environment" {
   }
 }
 
-variable "chatbot_role_arn" {
-  description = "ARN da IAM Role do Chatbot (ex.: arn:aws:iam::123456789012:role/chatbot-role)"
+# =============================================
+# VARIÁVEIS DE CONFIGURAÇÃO DO BUCKET S3
+# =============================================
+
+variable "bucket_name_prefix" {
+  description = "Prefixo para nomes de buckets (será combinado com owner_tag e random suffix)"
   type        = string
-  validation {
-    condition     = can(regex("^arn:aws:iam::\\d{12}:role/[a-zA-Z0-9_-]+$", var.chatbot_role_arn))
-    error_message = "O ARN da role deve seguir o padrão AWS (arn:aws:iam::ACCOUNT_ID:role/ROLE_NAME)."
-  }
+  default     = "chatbot-docs"
 }
 
-# =============================================
-# NOVAS VARIÁVEIS ADICIONADAS PARA O MÓDULO DE STORAGE PARA O CHATBOT
-# =============================================
+variable "enable_bucket_versioning" {
+  description = "Habilita versionamento para os buckets S3"
+  type        = bool
+  default     = true
+}
+
+variable "force_destroy" {
+  description = "Permite destruir buckets não vazios (usar apenas em ambientes de desenvolvimento)"
+  type        = bool
+  default     = false
+}
 
 variable "kms_key_arn" {
   description = "ARN da chave KMS para encriptação (ex.: arn:aws:kms:us-east-1:123456789012:key/abcd1234...)"
   type        = string
   default     = "" # Se vazio, usará a chave padrão da AWS
 }
+
+# =============================================
+# VARIÁVEIS DE LOGGING E MONITORAMENTO
+# =============================================
 
 variable "enable_access_logging" {
   description = "Habilita logging de acesso ao bucket S3"
@@ -63,6 +64,19 @@ variable "logging_bucket" {
   default     = ""
 }
 
+# =============================================
+# VARIÁVEIS DE CONTROLE DE ACESSO
+# =============================================
+
+variable "chatbot_role_arn" {
+  description = "ARN da IAM Role do Chatbot (ex.: arn:aws:iam::123456789012:role/chatbot-role)"
+  type        = string
+  validation {
+    condition     = can(regex("^arn:aws:iam::\\d{12}:role/[a-zA-Z0-9_-]+$", var.chatbot_role_arn))
+    error_message = "O ARN da role deve seguir o padrão AWS (arn:aws:iam::ACCOUNT_ID:role/ROLE_NAME)."
+  }
+}
+
 variable "admin_roles" {
   description = "Lista de ARNs de IAM Roles com acesso administrativo aos buckets"
   type        = list(string)
@@ -73,20 +87,12 @@ variable "admin_roles" {
   }
 }
 
-variable "bucket_name_prefix" {
-  description = "Prefixo para nomes de buckets (será combinado com owner_tag e random suffix)"
-  type        = string
-  default     = "chatbot-docs"
-}
+# =============================================
+# VARIÁVEIS DO DYNAMODB (TERRAFORM STATE LOCK)
+# =============================================
 
-variable "force_destroy" {
-  description = "Permite destruir buckets não vazios (usar apenas em ambientes de desenvolvimento)"
-  type        = bool
-  default     = false
-}
-
-variable "enable_bucket_versioning" {
-  description = "Habilita versionamento para os buckets S3"
+variable "create_terraform_state" {
+  description = "Controla a criação dos recursos para Terraform State (bucket S3 e DynamoDB)"
   type        = bool
   default     = true
 }
@@ -101,8 +107,14 @@ variable "dynamodb_table_attributes" {
 }
 
 # =============================================
-# VARIÁVEIS PARA CUSTOMIZAÇÃO DE TAGS
+# VARIÁVEIS DE TAGS E METADADOS
 # =============================================
+
+variable "common_tags" {
+  description = "Tags comuns para todos os recursos (padrão: Environment, Owner, Project, ManagedBy)"
+  type        = map(string)
+  default     = {}
+}
 
 variable "additional_tags" {
   description = "Tags adicionais para todos os recursos"

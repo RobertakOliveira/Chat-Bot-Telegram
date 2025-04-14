@@ -1,5 +1,5 @@
 # Módulo de Storage para o Chatbot Jurídico
-# Versão 2.0 - Com melhorias de segurança e organização
+# Versão 2.1 - Com encriptação AES256
 
 # =============================================
 # DATA SOURCES
@@ -27,7 +27,6 @@ resource "random_id" "bucket_suffix" {
 resource "aws_s3_bucket" "docs" {
   bucket = lower("chatbot-docs-${var.owner_tag}-${random_id.bucket_suffix.hex}")
   
-  # Força a criação em região específica
   force_destroy = false  # Previne deleção acidental
 
   tags = merge(
@@ -36,23 +35,23 @@ resource "aws_s3_bucket" "docs" {
       Name        = "chatbot-docs-${var.owner_tag}"
       Component   = "storage"
       Sensitivity = "high"
-      Compliance = "confidencial"
+      Compliance  = "confidencial"
     }
   )
 
   lifecycle {
-    prevent_destroy = true  # Proteção adicional contra deleção
+    prevent_destroy = true
     ignore_changes = [
-      tags["CreatedDate"]  # Permite atualizações de outras tags
+      # Ignora mudanças em tags para evitar conflitos
+      tags["CreatedDate"]
     ]
   }
 }
 
 # =============================================
-# CONFIGURAÇÕES DO BUCKET
+# CONFIGURAÇÕES DO BUCKET (AES256)
 # =============================================
 
-# Versionamento para recuperação de documentos
 resource "aws_s3_bucket_versioning" "docs" {
   bucket = aws_s3_bucket.docs.id
   versioning_configuration {
@@ -60,20 +59,18 @@ resource "aws_s3_bucket_versioning" "docs" {
   }
 }
 
-# Encriptação com KMS (mais seguro que AES256)
+# Encriptação com AES256 (padrão AWS)
 resource "aws_s3_bucket_server_side_encryption_configuration" "docs_encryption" {
   bucket = aws_s3_bucket.docs.id
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm     = "aws:kms"
-      kms_master_key_id = var.kms_key_arn
+      sse_algorithm = "AES256"  # Alterado para AES256
     }
-    bucket_key_enabled = true  # Reduz custos com KMS
+    # Removido bucket_key_enabled (não aplicável para AES256)
   }
 }
 
-# Bloqueio de acesso público
 resource "aws_s3_bucket_public_access_block" "docs_block" {
   bucket = aws_s3_bucket.docs.id
 
@@ -83,7 +80,6 @@ resource "aws_s3_bucket_public_access_block" "docs_block" {
   restrict_public_buckets = true
 }
 
-# Logging de acesso (recomendado para auditoria)
 resource "aws_s3_bucket_logging" "docs_logging" {
   count = var.enable_access_logging ? 1 : 0
 
@@ -97,7 +93,7 @@ resource "aws_s3_bucket_logging" "docs_logging" {
 # =============================================
 
 data "aws_iam_policy_document" "bucket_policy" {
-  # Statement 1: Bloqueia todo acesso não HTTPS
+  # Bloqueia acesso não HTTPS
   statement {
     sid    = "AllowSSLRequestsOnly"
     effect = "Deny"
@@ -117,7 +113,7 @@ data "aws_iam_policy_document" "bucket_policy" {
     }
   }
 
-  # Statement 2: Permissões para o serviço do Chatbot
+  # Permissões para o Chatbot
   statement {
     sid    = "AllowChatbotAccess"
     effect = "Allow"
@@ -129,7 +125,7 @@ data "aws_iam_policy_document" "bucket_policy" {
       "s3:GetObject",
       "s3:PutObject",
       "s3:ListBucket",
-      "s3:DeleteObjectVersion",  # Importante para versionamento
+      "s3:DeleteObjectVersion",
       "s3:GetObjectVersion"
     ]
     resources = [
@@ -138,7 +134,7 @@ data "aws_iam_policy_document" "bucket_policy" {
     ]
   }
 
-  # Statement 3: Permissões para administradores (opcional)
+  # Permissões para administradores
   statement {
     sid    = "AllowAdminAccess"
     effect = "Allow"
@@ -146,10 +142,8 @@ data "aws_iam_policy_document" "bucket_policy" {
       type        = "AWS"
       identifiers = var.admin_roles
     }
-    actions = [
-      "s3:*"
-    ]
-    resources = [
+    actions    = ["s3:*"]
+    resources  = [
       aws_s3_bucket.docs.arn,
       "${aws_s3_bucket.docs.arn}/*"
     ]
@@ -175,14 +169,13 @@ resource "aws_dynamodb_table" "terraform_locks" {
     type = "S"
   }
 
-  # Configurações de throughput (opcional para grandes times)
+  # Encriptação com AES256 (removida referência ao KMS)
   server_side_encryption {
-    enabled     = true
-    kms_key_arn = var.kms_key_arn
+    enabled = true  # Usará encriptação padrão AES256
   }
 
   point_in_time_recovery {
-    enabled = true  # Permite recuperação acidental
+    enabled = true
   }
 
   tags = merge(
@@ -195,7 +188,7 @@ resource "aws_dynamodb_table" "terraform_locks" {
 }
 
 # =============================================
-# OUTPUTS (Valores que podem ser usados por outros módulos)
+# OUTPUTS
 # =============================================
 
 output "docs_bucket_name" {
