@@ -68,9 +68,12 @@ resultados_test.txt
 *.tfstate
 *.tfstate.*
 *.tfstate.backup
-*.tfvars
+*.tfvars.example
 *.tfvars.json
 terraform.tfvars
+.terraform.lock.hcl
+*.tfplan
+
 
 ######################################################################
 #                         FERRAMENTAS DE DEV                          #
