@@ -75,11 +75,11 @@ def test_all_pdfs_com_metadados():
 
 
 if __name__ == "__main__":
-    # print("=== TESTE DE PDF ÚNICO ===")
-    # test_single_pdf()
+    print("=== TESTE DE PDF ÚNICO ===")
+    test_single_pdf()
 
-    print("\n=== TESTE DE TODOS OS PDFs ===")
-    test_all_pdfs()
+    # print("\n=== TESTE DE TODOS OS PDFs ===")
+    # test_all_pdfs()
 
     # print("\n=== TESTE DE TODOS OS PDFs COM METADADOS ===")
     # test_all_pdfs_com_metadados()
