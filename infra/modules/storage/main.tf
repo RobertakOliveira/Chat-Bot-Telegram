@@ -1,5 +1,5 @@
 # Módulo de Storage para o Chatbot Jurídico
-# Versão 2.1 - Com encriptação AES256
+# Versão 2.2 - Com ajustes de política S3 e encriptação AES256
 
 # =============================================
 # DATA SOURCES
@@ -42,28 +42,17 @@ resource "aws_s3_bucket" "docs" {
   lifecycle {
     prevent_destroy = true
     ignore_changes = [
-      # Ignora mudanças em tags para evitar conflitos
       tags["CreatedDate"]
     ]
   }
 }
 
-
-
 resource "aws_s3_object" "pdfs" {
   for_each = fileset(var.dataset_path, "*.pdf") # Pasta local com PDFs
-  bucket   = aws_s3_bucket.rag_bucket.id
+  bucket   = aws_s3_bucket.docs.id
   key      = "juridicos/${each.value}"
   source   = "${var.dataset_path}/${each.value}"
 }
- 
-resource "random_id" "suffix" {
-  byte_length = 4
-}
-
-
-
-  
 
 # =============================================
 # CONFIGURAÇÕES DO BUCKET (AES256)
@@ -76,15 +65,13 @@ resource "aws_s3_bucket_versioning" "docs" {
   }
 }
 
-# Encriptação com AES256 (padrão AWS)
 resource "aws_s3_bucket_server_side_encryption_configuration" "docs_encryption" {
   bucket = aws_s3_bucket.docs.id
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"  # Alterado para AES256
+      sse_algorithm = "AES256"
     }
-    # Removido bucket_key_enabled (não aplicável para AES256)
   }
 }
 
@@ -106,13 +93,13 @@ resource "aws_s3_bucket_logging" "docs_logging" {
 }
 
 # =============================================
-# POLÍTICA DE ACESSO (Bucket Policy)
+# POLÍTICA DE ACESSO (Bucket Policy) - AJUSTADA
 # =============================================
 
 data "aws_iam_policy_document" "bucket_policy" {
   # Bloqueia acesso não HTTPS
   statement {
-    sid    = "AllowSSLRequestsOnly"
+    sid    = "ForceSSLOnlyAccess"
     effect = "Deny"
     principals {
       type        = "*"
@@ -120,7 +107,7 @@ data "aws_iam_policy_document" "bucket_policy" {
     }
     actions   = ["s3:*"]
     resources = [
-      aws_s3_bucket.docs.arn,
+      "${aws_s3_bucket.docs.arn}",
       "${aws_s3_bucket.docs.arn}/*"
     ]
     condition {
@@ -142,29 +129,28 @@ data "aws_iam_policy_document" "bucket_policy" {
       "s3:GetObject",
       "s3:PutObject",
       "s3:ListBucket",
-      "s3:DeleteObjectVersion",
-      "s3:GetObjectVersion"
+      "s3:DeleteObject"
     ]
     resources = [
-      aws_s3_bucket.docs.arn,
+      "${aws_s3_bucket.docs.arn}",
       "${aws_s3_bucket.docs.arn}/*"
     ]
   }
 
-  # Permissões para administradores
-  statement {
-    sid    = "AllowAdminAccess"
-    effect = "Allow"
-    principals {
-      type        = "AWS"
-      identifiers = var.admin_roles
-    }
-    actions    = ["s3:*"]
-    resources  = [
-      aws_s3_bucket.docs.arn,
-      "${aws_s3_bucket.docs.arn}/*"
-    ]
-  }
+  # Permissões para administradores (opcional - comente se não for necessário)
+  # statement {
+  #   sid    = "AllowAdminAccess"
+  #   effect = "Allow"
+  #   principals {
+  #     type        = "AWS"
+  #     identifiers = var.admin_roles
+  #   }
+  #   actions    = ["s3:*"]
+  #   resources  = [
+  #     "${aws_s3_bucket.docs.arn}",
+  #     "${aws_s3_bucket.docs.arn}/*"
+  #   ]
+  # }
 }
 
 resource "aws_s3_bucket_policy" "docs_access" {
@@ -186,9 +172,8 @@ resource "aws_dynamodb_table" "terraform_locks" {
     type = "S"
   }
 
-  # Encriptação com AES256 (removida referência ao KMS)
   server_side_encryption {
-    enabled = true  # Usará encriptação padrão AES256
+    enabled = true
   }
 
   point_in_time_recovery {

@@ -15,7 +15,9 @@ module "storage" {
   common_tags  = var.common_tags
   chatbot_role_arn = module.compute.chatbot_role_arn
   depends_on = [module.network]
+  dataset_path = "./juridicos"
 }
+
 
 # Módulo de computação (compute)
 module "compute" {
@@ -30,8 +32,3 @@ module "compute" {
   
 }
 
-module "s3" {
-  source       = "./modules/s3"
-  dataset_path = "./juridicos"
-  project_name = local.project_name
-}
