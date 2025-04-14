@@ -1,5 +1,5 @@
 # Teste local rápido
-from chat.core.pdf_processing_copy import process_all_pdfs_in_bucket
+from chat.core.pdf_processing import process_all_pdfs_in_bucket
 import time
 
 start = time.time()
