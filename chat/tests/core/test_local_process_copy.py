@@ -6,7 +6,7 @@ start = time.time()
 BUCKET_NAME = "consultor-juridico"  # Inserir o nome do bucket aqui
 
 docs = process_all_pdfs_in_bucket(BUCKET_NAME)
-print(f"🗂️ Bucket: {BUCKET_NAME}")
+print(f" 🗂️ Bucket: {BUCKET_NAME}")
 
 for doc in docs[:5]:  # Exibe os 5 primeiros documentos processados
     print(doc.metadata)

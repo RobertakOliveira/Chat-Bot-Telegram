@@ -42,34 +42,6 @@ class LegalMetadataExtractor:
         (r'(Supremo\s*Tribunal\s*Federal|STF)', 'STF')
     ]
 
-    # Tipos documentais consolidados
-    DOC_TYPE_PATTERNS = {
-        'acordão_recorrido': [
-            re.compile(r'ACÓRDÃO\s+RECORRIDO', re.IGNORECASE),
-            re.compile(r'JULGADO\s+EM\s+SEGUNDO\s+GRAU', re.IGNORECASE)
-        ],
-        'acordão_embargos': [
-            re.compile(r'ACÓRDÃO\s+EMBARGOS', re.IGNORECASE),
-            re.compile(r'EMBARGOS\s+DE\s+DECLARAÇÃO', re.IGNORECASE)
-        ],
-        'decisão_admissibilidade': [
-            re.compile(r'DECISÃO\s+DE\s+ADMISSIBILIDADE', re.IGNORECASE),
-            re.compile(r'ANÁLISE\s+DE\s+ADMISSIBILIDADE', re.IGNORECASE),
-            re.compile(r'DECISÃO\s+ADMISSIBILIDADE', re.IGNORECASE),
-            re.compile(r'ADMISSIBILIDADE\s+DE\s+RECURSO', re.IGNORECASE)
-        ],
-        'recurso_extraordinário': [
-            re.compile(r'RECURSO\s+EXTRAORDINÁRIO', re.IGNORECASE),
-            re.compile(r'RE\s+nº?\s*\d+', re.IGNORECASE)
-        ],
-        'agravo': [
-            re.compile(
-                r'AGRAVO\s+(INTERNO|REGIMENTAL|EM\s+RECURSO\s+ESPECIAL)', re.IGNORECASE),
-            re.compile(r'AGRAVO\s+EM\s+RECURSO\s+ESPECIAL', re.IGNORECASE),
-            re.compile(r'AGRAVO\s+DE\s+INSTRUMENTO', re.IGNORECASE)
-        ]
-    }
-
     @classmethod
     def _extract_parties(cls, text: str) -> Dict[str, str]:
         """Extrai partes envolvidas (apelante/apelado etc.)"""
@@ -103,7 +75,7 @@ class LegalMetadataExtractor:
         return parties
 
     @classmethod
-    def extract_from_text(cls, text: str, filename: str = "") -> Dict[str, str]:
+    def extract_from_text(cls, text: str) -> Dict[str, str]:
         """Extrai metadados jurídicos com tratamento de erros"""
         metadata = {}
         try:
@@ -149,25 +121,20 @@ class LegalMetadataExtractor:
     def _identify_document_type(cls, text: str, filename: str = "") -> str:
         """Identifica tipo documental com prioridade"""
         try:
-            # Primeiro tenta pelo conteúdo
-            for doc_type, patterns in cls.DOC_TYPE_PATTERNS.items():
-                for pattern in patterns:
-                    if pattern.search(text[:2000]):
-                        return doc_type
 
-            # 2. Fallback pelo nome do arquivo (mais específico)
+            # 1. Fallback pelo nome do arquivo
             filename_lower = filename.lower()
 
-            if 'acordao-recorrido' in filename_lower:
-                return 'acordão_recorrido'
-            elif 'acordao-embargos' in filename_lower:
-                return 'acordão_embargos'
-            elif 'recurso-extraordinario' in filename_lower:
-                return 'recurso_extraordinário'
-            elif 'decisao-admissibilidade' in filename_lower:
-                return 'decisão_admissibilidade'
-            elif 'agravo' in filename_lower:
-                return 'agravo'
+            if "acordao-recorrido" in filename_lower:
+                return "acordao_recorrido"
+            elif "acordao-embargos" in filename_lower:
+                return "acordao_embargos"
+            elif "recurso-extraordinario" in filename_lower:
+                return "recurso_extraordinario"
+            elif "decisao-admissibilidade" in filename_lower:
+                return "decisao_admissibilidade"
+            elif "agravo" in filename_lower:
+                return "agravo"
             else:
                 logging.warning(
                     f"Tipo documental não identificado para: {filename}. Texto: {text[:500]}")
@@ -184,9 +151,9 @@ class LegalMetadataExtractor:
             if match:
                 tribunal_name = next((g for g in match.groups() if g), None)
                 if tribunal_name:
-                    # Corrige court_level para TRF
-                    if prefix == 'TRF' or 'TRF' in tribunal_name:
-                        prefix = 'TRF'
+                    # Força TRF se identificado no texto (ex: Chunk 130)
+                    if "TRF" in tribunal_name or "Regional Federal" in tribunal_name:
+                        prefix = "TRF"
                     return {
                         'jurisdiction': f"{prefix}-{tribunal_name.strip().upper()}",
                         'court_level': prefix
@@ -304,7 +271,7 @@ class LegalTextProcessor:
             "has_legal_references": bool(re.search(r'art\.\s+\d+', text))
         }
         filename = base_meta['source']
-        return {**base_meta, **LegalMetadataExtractor.extract_from_text(text, filename)}
+        return {**base_meta, **LegalMetadataExtractor.extract_from_text(text)}
 
     def _split_document(self, text: str, metadata: Dict) -> List[Document]:
         """Divide o texto preservando estrutura jurídica"""
