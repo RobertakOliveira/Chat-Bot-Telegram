@@ -1,0 +1,17 @@
+# Arquivos e diretórios do Terraform
+
+# Diretório .terraform (inclui todos os subdiretórios e arquivos)
+.terraform
+
+# Arquivos de estado
+terraform.tfstate
+terraform.tfstate.backup
+
+# Arquivo de lock do Terraform
+.terraform.lock.hcl
+
+# Diretório de módulos (pode ser incluído no .terraform, mas listado explicitamente por clareza)
+terraform/.terraform/modules
+
+# Diretório de providers (pode ser incluído no .terraform, mas listado explicitamente por clareza)
+terraform/.terraform/providers
