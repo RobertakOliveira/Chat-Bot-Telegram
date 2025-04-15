@@ -62,3 +62,9 @@ variable "chatbot_role_arn" {
   type        = string
   default = ""
 }
+
+# ID da instância EC2 que será monitorada
+ variable "instance_id" {
+   description = "ID da instância EC2 (para métricas e alarms)"
+   type        = string
+ }
