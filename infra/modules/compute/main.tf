@@ -220,7 +220,9 @@ resource "aws_cloudwatch_dashboard" "chatbot_dashboard" {
             [".", "NetworkIn", ".", ".", {"label": "Network In"}],
             [".", "NetworkOut", ".", ".", {"label": "Network Out"}],
             [".", "DiskReadOps", ".", ".", {"label": "Disk Read Ops"}],
-            [".", "DiskWriteOps", ".", ".", {"label": "Disk Write Ops"}]
+            [".", "DiskWriteOps", ".", ".", {"label": "Disk Write Ops"}],
+            [".", "StatusCheckFailed", ".", ".", {"label": "Status Checks"}],
+            [".", "MemoryUtilization", ".", ".", {"stat": "Average", "period": 60, "label": "Memory Usage"}]
           ]
           view    = "timeSeries"
           stacked = false
@@ -237,7 +239,26 @@ resource "aws_cloudwatch_dashboard" "chatbot_dashboard" {
         width  = 12
         height = 3
         properties = {
-          markdown = "### Chatbot Jurídico\n**Instance ID:** ${aws_instance.chatbot_server.id}\n**Public IP:** ${aws_instance.chatbot_server.public_ip}"
+          markdown = "### Chatbot Jurídico\n**Instance ID:** ${aws_instance.chatbot_server.id}\n**Public IP:** ${aws_instance.chatbot_server.public_ip}\n**Environment:** ${var.environment}\n**Last Updated:** ${timestamp()}"
+        }
+      },
+      {
+        type   = "metric"
+        x      = 0
+        y      = 9
+        width  = 12
+        height = 6
+        properties = {
+          metrics = [
+            ["AWS/S3", "NumberOfObjects", "StorageType", "AllStorageTypes", "BucketName", module.storage.docs_bucket_name, {"label": "S3 Objects"}],
+            [".", "BucketSizeBytes", ".", "StandardStorage", ".", ".", {"label": "S3 Storage"}]
+          ]
+          view    = "timeSeries"
+          stacked = false
+          region  = var.aws_region
+          title   = "S3 Storage Metrics"
+          period  = 86400
+          stat    = "Average"
         }
       }
     ]

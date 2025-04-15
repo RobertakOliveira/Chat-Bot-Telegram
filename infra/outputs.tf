@@ -14,3 +14,8 @@ output "chatbot_security_group_id" {
   description = "ID of the Chatbot Security Group"
   value       = module.compute.security_group_id
 }
+
+output "cloudwatch_dashboard_url" {
+  description = "URL do Dashboard CloudWatch para monitoramento"
+  value       = module.compute.cloudwatch_dashboard_url
+}

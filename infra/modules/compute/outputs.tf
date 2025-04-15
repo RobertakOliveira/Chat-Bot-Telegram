@@ -21,3 +21,8 @@ output "security_group_id" {
   description = "ID of the Security Group"
   value       = aws_security_group.chatbot_sg.id
 }
+
+output "cloudwatch_dashboard_url" {
+  description = "URL do Dashboard CloudWatch"
+  value       = "https://${var.aws_region}.console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${aws_cloudwatch_dashboard.chatbot_dashboard.dashboard_name}"
+}
