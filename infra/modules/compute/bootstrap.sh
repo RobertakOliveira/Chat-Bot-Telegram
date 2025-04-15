@@ -2,110 +2,123 @@
 
 # ==============================================
 # SCRIPT DE PROVISIONAMENTO - CHATBOT JURÍDICO
-# ==============================================
-# Versão: 2.0
+# Versão: 3.0
 # Autor: Katcilane Souza
 # ==============================================
 
 # ----------------------------
 # CONFIGURAÇÕES GERAIS
 # ----------------------------
-APP_DIR="/opt/chatbot"       
-APP_USER="ubuntu"            
+APP_DIR="/opt/chatbot"
+APP_USER="ubuntu"
 GIT_REPO="https://github.com/Compass-pb-aws-2025-JANEIRO/sprints-7-8-pb-aws-janeiro"
 LOG_FILE="/var/log/chatbot-setup.log"
+SCRIPTS_DIR="$APP_DIR/scripts"
 
-# Função para registrar logs
+# Criar diretório de scripts
+mkdir -p "$SCRIPTS_DIR"
+
+# Função para registrar logs com diferentes níveis
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a $LOG_FILE
+    local level=$1
+    local message=$2
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" | tee -a "$LOG_FILE"
+}
+
+# Função para verificar erros
+check_error() {
+    local exit_code=$1
+    local message=$2
+    if [ $exit_code -ne 0 ]; then
+        log "ERROR" "Falha: $message (Código: $exit_code)"
+        exit $exit_code
+    fi
+}
+
+# Função para executar comandos com tratamento de erro
+run_cmd() {
+    local cmd=$1
+    local desc=$2
+    log "INFO" "Executando: $desc"
+    eval "$cmd" >> "$LOG_FILE" 2>&1
+    check_error $? "$desc"
 }
 
 # ----------------------------
 # 1. PREPARAÇÃO DO SISTEMA
 # ----------------------------
-log "Iniciando provisionamento da instância EC2"
+log "INFO" "Iniciando provisionamento da instância EC2"
 
 # Atualiza pacotes
-log "Atualizando pacotes do sistema..."
-export DEBIAN_FRONTEND=noninteractive
-apt-get update -y >> $LOG_FILE 2>&1
-apt-get upgrade -y >> $LOG_FILE 2>&1
+run_cmd "apt-get update -y" "Atualizando pacotes do sistema"
+run_cmd "apt-get upgrade -y" "Atualizando sistema"
 
 # Instala dependências essenciais
-log "Instalando dependências básicas..."
-apt-get install -y \
-    python3-pip \
-    python3-dev \
-    libssl-dev \
-    libffi-dev \
-    nginx \
-    git \
-    libpq-dev \
-    python3-venv \
-    build-essential \
-    unzip \
-    wget >> $LOG_FILE 2>&1
+run_cmd "apt-get install -y python3-pip python3-dev libssl-dev libffi-dev nginx git libpq-dev python3-venv build-essential unzip wget" "Instalando dependências básicas"
 
 # ----------------------------
 # 2. CONFIGURAÇÃO DO PYTHON
 # ----------------------------
-log "Configurando ambiente Python..."
-pip3 install --upgrade pip >> $LOG_FILE 2>&1
-pip3 install virtualenv >> $LOG_FILE 2>&1
+run_cmd "pip3 install --upgrade pip" "Atualizando pip"
+run_cmd "pip3 install virtualenv" "Instalando virtualenv"
 
 # ----------------------------
 # 3. ESTRUTURA DE DIRETÓRIOS
 # ----------------------------
-log "Criando estrutura de diretórios..."
-mkdir -p $APP_DIR/app
-mkdir -p $APP_DIR/data/documents
-mkdir -p $APP_DIR/logs
-mkdir -p $APP_DIR/scripts
+log "INFO" "Criando estrutura de diretórios..."
+mkdir -p "$APP_DIR/app" || check_error $? "Criar diretório app"
+mkdir -p "$APP_DIR/data/documents" || check_error $? "Criar diretório documents"
+mkdir -p "$APP_DIR/logs" || check_error $? "Criar diretório logs"
+mkdir -p "$SCRIPTS_DIR" || check_error $? "Criar diretório scripts"
 
 # Ajusta permissões
-chown -R $APP_USER:$APP_USER $APP_DIR
-chmod -R 755 $APP_DIR
+run_cmd "chown -R $APP_USER:$APP_USER $APP_DIR" "Ajustando permissões"
+run_cmd "chmod -R 755 $APP_DIR" "Ajustando permissões"
 
 # ----------------------------
 # 4. BAIXAR CÓDIGO-FONTE
 # ----------------------------
-log "Obtendo código-fonte do repositório..."
 if [ ! -d "$APP_DIR/.git" ]; then
-    git clone $GIT_REPO $APP_DIR >> $LOG_FILE 2>&1
+    run_cmd "git clone $GIT_REPO $APP_DIR" "Clonando repositório"
 else
-    cd $APP_DIR && git pull >> $LOG_FILE 2>&1
+    cd "$APP_DIR" && run_cmd "git pull" "Atualizando repositório"
 fi
 
 # ----------------------------
 # 5. CONFIGURAR VIRTUALENV
 # ----------------------------
-log "Configurando ambiente virtual Python..."
-python3 -m virtualenv $APP_DIR/venv >> $LOG_FILE 2>&1
+run_cmd "python3 -m virtualenv $APP_DIR/venv" "Criando virtualenv"
 
 # Instalar dependências Python
-log "Instalando dependências Python..."
-source $APP_DIR/venv/bin/activate && \
-pip install --upgrade pip && \
-pip install \
-    langchain \
-    chromadb \
-    pypdf \
-    sentence-transformers \
-    flask \
-    fastapi \
-    uvicorn \
-    python-dotenv \
-    boto3 \
-    awscli \
-    python-multipart \
-    transformers >> $LOG_FILE 2>&1
+log "INFO" "Instalando dependências Python..."
+source "$APP_DIR/venv/bin/activate" || check_error $? "Ativar virtualenv"
+
+pip_packages=(
+    "langchain"
+    "chromadb"
+    "pypdf"
+    "sentence-transformers"
+    "flask"
+    "fastapi"
+    "uvicorn"
+    "python-dotenv"
+    "boto3"
+    "awscli"
+    "python-multipart"
+    "transformers"
+)
+
+for package in "${pip_packages[@]}"; do
+    run_cmd "pip install $package" "Instalando $package"
+done
+
 deactivate
 
 # ----------------------------
 # 6. CONFIGURAÇÕES DE AMBIENTE
 # ----------------------------
-log "Configurando variáveis de ambiente..."
-cat <<EOF > $APP_DIR/.env
+log "INFO" "Configurando variáveis de ambiente..."
+cat <<EOF > "$APP_DIR/.env" || check_error $? "Criar arquivo .env"
 # Configurações da API
 API_HOST=0.0.0.0
 API_PORT=5000
@@ -123,14 +136,14 @@ AWS_REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
 EOF
 
 # Proteger arquivo .env
-chown $APP_USER:$APP_USER $APP_DIR/.env
-chmod 600 $APP_DIR/.env
+run_cmd "chown $APP_USER:$APP_USER $APP_DIR/.env" "Protegendo .env"
+run_cmd "chmod 600 $APP_DIR/.env" "Protegendo .env"
 
 # ----------------------------
 # 7. CONFIGURAR SERVIÇO SYSTEMD
 # ----------------------------
-log "Configurando serviço da API..."
-cat <<EOF > /etc/systemd/system/chatbot-api.service
+log "INFO" "Configurando serviço da API..."
+cat <<EOF > "/etc/systemd/system/chatbot-api.service" || check_error $? "Criar serviço systemd"
 [Unit]
 Description=Chatbot Juridico API
 After=network.target
@@ -153,8 +166,8 @@ EOF
 # ----------------------------
 # 8. CONFIGURAR NGINX
 # ----------------------------
-log "Configurando Nginx como proxy reverso..."
-cat <<EOF > /etc/nginx/sites-available/chatbot
+log "INFO" "Configurando Nginx como proxy reverso..."
+cat <<EOF > "/etc/nginx/sites-available/chatbot" || check_error $? "Criar configuração Nginx"
 server {
     listen 80;
     server_name _;
@@ -172,31 +185,31 @@ server {
 EOF
 
 # Ativar configuração
-ln -s /etc/nginx/sites-available/chatbot /etc/nginx/sites-enabled
-rm -f /etc/nginx/sites-enabled/default
+run_cmd "ln -s /etc/nginx/sites-available/chatbot /etc/nginx/sites-enabled" "Ativar site Nginx"
+run_cmd "rm -f /etc/nginx/sites-enabled/default" "Remover configuração padrão Nginx"
 
 # Testar e reiniciar Nginx
-nginx -t >> $LOG_FILE 2>&1
-systemctl restart nginx >> $LOG_FILE 2>&1
+run_cmd "nginx -t" "Testar configuração Nginx"
+run_cmd "systemctl restart nginx" "Reiniciar Nginx"
 
 # ----------------------------
 # 9. INICIAR SERVIÇOS
 # ----------------------------
-log "Iniciando serviços..."
-systemctl daemon-reload
-systemctl enable chatbot-api >> $LOG_FILE 2>&1
-systemctl start chatbot-api >> $LOG_FILE 2>&1
-systemctl enable nginx >> $LOG_FILE 2>&1
-systemctl restart nginx >> $LOG_FILE 2>&1
+log "INFO" "Iniciando serviços..."
+run_cmd "systemctl daemon-reload" "Recarregar daemon systemd"
+run_cmd "systemctl enable chatbot-api" "Habilitar serviço API"
+run_cmd "systemctl start chatbot-api" "Iniciar serviço API"
+run_cmd "systemctl enable nginx" "Habilitar Nginx"
+run_cmd "systemctl restart nginx" "Reiniciar Nginx"
 
 # ----------------------------
 # 10. FINALIZAÇÃO
 # ----------------------------
-log "Provisionamento concluído com sucesso!"
-log "Informações de acesso:"
-log " - API: http://localhost:5000"
-log " - Nginx: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
-log " - Logs da API: journalctl -u chatbot-api -f"
-log " - Logs do Nginx: tail -f $APP_DIR/logs/nginx-*.log"
+log "INFO" "Provisionamento concluído com sucesso!"
+log "INFO" "Informações de acesso:"
+log "INFO" " - API: http://localhost:5000"
+log "INFO" " - Nginx: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
+log "INFO" " - Logs da API: journalctl -u chatbot-api -f"
+log "INFO" " - Logs do Nginx: tail -f $APP_DIR/logs/nginx-*.log"
 
 exit 0
