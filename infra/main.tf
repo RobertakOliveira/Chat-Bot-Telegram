@@ -29,6 +29,6 @@ module "compute" {
   common_tags   = var.common_tags
   owner_tag     = var.owner_tag
   aws_region    = var.aws_region
-  
+ s3_bucket_name = module.storage.docs_bucket_name 
 }
 

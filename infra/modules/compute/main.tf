@@ -20,7 +20,7 @@ data "aws_ami" "ubuntu" {
 # Security Group para a instância EC2 do Chatbot.
 resource "aws_security_group" "chatbot_sg" {
   name        = "chatbot-sg-${var.environment}"
-  description = "Chatbot Security Group"  # Use apenas caracteres ASCII
+  description = "Chatbot Security Group"
   vpc_id      = var.vpc_id
 
   # Permitir acesso SSH de qualquer lugar.
@@ -133,7 +133,7 @@ resource "aws_iam_instance_profile" "chatbot_profile" {
 # Par de chaves para acesso SSH à instância EC2.
 resource "aws_key_pair" "chatbot_key" {
   key_name   = "chatbot-key-${var.environment}"
-  public_key = file("C:/Users/katys/.ssh/terraform_chatbot_key.pub") # Substitua pelo caminho da sua chave pública
+  public_key = file("C:/Users/katys/.ssh/terraform_chatbot_key.pub")
 
   tags = merge(
     var.common_tags,
@@ -144,17 +144,15 @@ resource "aws_key_pair" "chatbot_key" {
 }
 
 # Instância EC2 para o Chatbot.
-# Substitua o bloco do resource aws_instance por este:
 resource "aws_instance" "chatbot_server" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t2.micro"
+  instance_type          = var.instance_type
   subnet_id              = var.subnet_id
   vpc_security_group_ids = [aws_security_group.chatbot_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.chatbot_profile.name
   key_name               = aws_key_pair.chatbot_key.key_name
   user_data              = filebase64("${path.module}/bootstrap.sh")
 
-  # Tags da instância (obrigatórias)
   tags = {
     Name        = "MinhaInstance1"
     Project     = "TerraformTest"
@@ -163,14 +161,11 @@ resource "aws_instance" "chatbot_server" {
     Owner       = var.owner_tag
   }
 
-  # Configuração do disco raiz (sem tags internas)
   root_block_device {
     volume_size = 30
     volume_type = "gp3"
-    # Removidas as tags daqui
   }
 
-  # Tags aplicadas a TODOS os volumes (incluindo o root)
   volume_tags = {
     Name        = "Example Volume"
     Project     = "MyProject"
@@ -220,9 +215,7 @@ resource "aws_cloudwatch_dashboard" "chatbot_dashboard" {
             [".", "NetworkIn", ".", ".", {"label": "Network In"}],
             [".", "NetworkOut", ".", ".", {"label": "Network Out"}],
             [".", "DiskReadOps", ".", ".", {"label": "Disk Read Ops"}],
-            [".", "DiskWriteOps", ".", ".", {"label": "Disk Write Ops"}],
-            [".", "StatusCheckFailed", ".", ".", {"label": "Status Checks"}],
-            [".", "MemoryUtilization", ".", ".", {"stat": "Average", "period": 60, "label": "Memory Usage"}]
+            [".", "DiskWriteOps", ".", ".", {"label": "Disk Write Ops"}]
           ]
           view    = "timeSeries"
           stacked = false
@@ -239,38 +232,15 @@ resource "aws_cloudwatch_dashboard" "chatbot_dashboard" {
         width  = 12
         height = 3
         properties = {
-          markdown = "### Chatbot Jurídico\n**Instance ID:** ${aws_instance.chatbot_server.id}\n**Public IP:** ${aws_instance.chatbot_server.public_ip}\n**Environment:** ${var.environment}\n**Last Updated:** ${timestamp()}"
-        }
-      },
-      {
-        type   = "metric"
-        x      = 0
-        y      = 9
-        width  = 12
-        height = 6
-        properties = {
-          metrics = [
-            ["AWS/S3", "NumberOfObjects", "StorageType", "AllStorageTypes", "BucketName", module.storage.docs_bucket_name, {"label": "S3 Objects"}],
-            [".", "BucketSizeBytes", ".", "StandardStorage", ".", ".", {"label": "S3 Storage"}]
-          ]
-          view    = "timeSeries"
-          stacked = false
-          region  = var.aws_region
-          title   = "S3 Storage Metrics"
-          period  = 86400
-          stat    = "Average"
+          markdown = "### Chatbot Jurídico\n**Instance ID:** ${aws_instance.chatbot_server.id}\n**Public IP:** ${aws_instance.chatbot_server.public_ip}"
         }
       }
     ]
   })
 }
 
-
-# Elastic IP para a instância EC2 do Chatbot este recurso auxilia na criação de um IP elástico associado à instância EC2 do Chatbot,
-# permitindo que a instância tenha um endereço IP fixo e acessível publicamente.
+# Elastic IP para a instância EC2 do Chatbot
 resource "aws_eip" "chatbot_eip" {
   instance = aws_instance.chatbot_server.id
   tags     = merge(var.common_tags, { Name = "chatbot-eip-${var.environment}" })
 }
-
-

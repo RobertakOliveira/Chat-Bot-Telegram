@@ -1,4 +1,8 @@
+#Este código é uma api desenvolvida com FastAPI, que tem como objetivo processar perguntas jurídicas e enviar respostas via Telegram.
+#Ele inclui validação de API Key, integração com um sistema RAG (Recuperação de Resposta Aumentada) e tratamento de erros.
 # Importações organizadas por categorias (FastAPI, modelos, HTTP, env, etc.)
+
+
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 import requests
