@@ -15,6 +15,24 @@ GIT_REPO="https://github.com/Compass-pb-aws-2025-JANEIRO/sprints-7-8-pb-aws-jane
 LOG_FILE="/var/log/chatbot-setup.log"
 SCRIPTS_DIR="$APP_DIR/scripts"
 
+
+
+
+# Verificação de recursos mínimos para execução do script
+MIN_MEMORY=1800 # 1.8GB
+MIN_CPU=1       # 1 vCPU
+
+TOTAL_MEM=$(free -m | awk '/Mem:/ {print $2}')
+TOTAL_CPU=$(nproc)
+
+if [ "$TOTAL_MEM" -lt "$MIN_MEMORY" ]; then
+  echo "⚠️  Memória insuficiente! Mínimo recomendado: ${MIN_MEMORY}MB" | tee -a "$LOG_FILE"
+fi
+
+if [ "$TOTAL_CPU" -lt "$MIN_CPU" ]; then
+  echo "⚠️  CPUs insuficientes! Mínimo recomendado: ${MIN_CPU}vCPU" | tee -a "$LOG_FILE"
+fi
+
 # Criar diretório de scripts
 mkdir -p "$SCRIPTS_DIR"
 
@@ -211,5 +229,20 @@ log "INFO" " - API: http://localhost:5000"
 log "INFO" " - Nginx: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
 log "INFO" " - Logs da API: journalctl -u chatbot-api -f"
 log "INFO" " - Logs do Nginx: tail -f $APP_DIR/logs/nginx-*.log"
+
+# Configurar log rotation (adicione no final):
+echo "Configurando log rotation..."
+cat <<EOF > /etc/logrotate.d/chatbot
+${APP_DIR}/logs/*.log {
+  daily
+  missingok
+  rotate 7
+  compress
+  delaycompress
+  notifempty
+  create 640 ubuntu ubuntu
+  sharedscripts
+}
+EOF # isso significa que os logs serão rotacionados diariamente, mantendo 7 dias de logs, e comprimindo os logs antigos.
 
 exit 0
