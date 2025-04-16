@@ -1,7 +1,8 @@
 import pandas as pd
+import re
+import os
 from datetime import datetime
 import traceback
-from collections import defaultdict
 from chat.core.pdf_processing import process_pdf_from_s3, list_pdfs_in_bucket
 
 
@@ -13,58 +14,72 @@ def validate_pdf_processing(bucket: str) -> pd.DataFrame:
     pdf_files = list_pdfs_in_bucket(bucket)
     validation_results = []
 
+    # Campos obrigatórios conforme implementação real
+    REQUIRED_FIELDS = ['doc_type', 'source', 'page']
+
     for pdf in pdf_files:
         try:
-            docs = process_pdf_from_s3(pdf['bucket'], pdf['key'])
+            file_key = pdf['key']
+            docs = process_pdf_from_s3(pdf['bucket'], file_key)
+
             if not docs:
                 validation_results.append({
-                    'file': pdf['key'],
+                    'file': file_key,
                     'status': 'ERROR',
-                    'issues': 'No documents extracted'
+                    'issues': 'No documents extracted',
+                    'chunks': 0
                 })
                 continue
 
-            # Coleta metadados do primeiro chunk (representativo)
-            metadata = docs[0].metadata
+            # Validação em uma amostra de chunks
+            sample_chunks = docs[:3]  # Verifica primeiros 3 chunks
             issues = []
+            metadata = sample_chunks[0].metadata
 
-            # Validação do doc_subtype
-            expected_type = _get_expected_doc_type(pdf['key'])
-            if metadata.get('doc_subtype') != expected_type:
+            # 1. Validação do tipo documental
+            expected_type = _get_expected_doc_type(file_key)
+            if metadata.get('doc_type') != expected_type:
                 issues.append(
-                    f"doc_subtype mismatch: expected {expected_type}, got {metadata.get('doc_subtype')}")
+                    f"Type mismatch: {metadata.get('doc_type')} vs {expected_type}")
 
-            # Validação de jurisdiction e court_level
-            if not metadata.get('jurisdiction') or metadata.get('jurisdiction') == 'NÃO IDENTIFICADO':
-                issues.append("jurisdiction not identified")
-
-            if not metadata.get('court_level') or metadata.get('court_level') == 'NÃO IDENTIFICADO':
-                issues.append("court_level not identified")
-
-            # Validação de campos obrigatórios
-            required_fields = ['process_number', 'source', 's3_uri', 'year']
-            for field in required_fields:
+            # 2. Campos obrigatórios
+            for field in REQUIRED_FIELDS:
                 if field not in metadata:
-                    issues.append(f"missing {field}")
+                    issues.append(f"Missing {field}")
+                elif not metadata[field]:  # Verifica valores vazios
+                    issues.append(f"Empty {field}")
+
+            # 3. Consistência entre chunks
+            for doc in sample_chunks[1:]:
+                if doc.metadata.get('doc_type') != metadata['doc_type']:
+                    issues.append("Inconsistent doc_type between chunks")
+                    break
+
+            # 4. Validação numérica da página
+            try:
+                if not (1 <= metadata.get('page', 0) <= 1000):  # Faixa razoável
+                    issues.append(
+                        f"Invalid page number: {metadata.get('page')}")
+            except TypeError:
+                issues.append("Page number not numeric")
 
             validation_results.append({
-                'file': pdf['key'],
+                'file': file_key,
                 'status': 'OK' if not issues else 'WARNING',
-                'issues': '; '.join(issues) if issues else 'All metadata correct',
-                'doc_subtype': metadata.get('doc_subtype'),
-                'jurisdiction': metadata.get('jurisdiction'),
-                'court_level': metadata.get('court_level'),
-                'process_number': metadata.get('process_number'),
-                'year': metadata.get('year'),
-                'pages': len(docs),
+                'issues': '; '.join(issues) if issues else 'All metadata valid',
+                'doc_type': metadata.get('doc_type'),
+                'source': metadata.get('source'),
+                'page': metadata.get('page'),
+                'chunks': len(docs),
                 'text_length': sum(len(d.page_content) for d in docs)
             })
 
         except Exception as e:
             validation_results.append({
-                'file': pdf['key'],
+                'file': file_key,
                 'status': 'ERROR',
-                'issues': str(e)
+                'issues': f"Processing error: {str(e)}",
+                'chunks': 0
             })
 
     return pd.DataFrame(validation_results)
@@ -72,52 +87,46 @@ def validate_pdf_processing(bucket: str) -> pd.DataFrame:
 
 def _get_expected_doc_type(filename: str) -> str:
     """Determina o tipo de documento esperado baseado no nome do arquivo"""
-    filename_lower = filename.lower()
+    filename = os.path.basename(filename).lower().replace('.pdf', '')
 
-    if 'acordao-recorrido' in filename_lower or 'acordão_recorrido' in filename_lower:
-        return 'acordao_recorrido'
-    elif 'acordao-embargos' in filename_lower or 'acordão_embargos' in filename_lower:
-        return 'acordao_embargos'
-    elif 'recurso-extraordinario' in filename_lower or 'recurso_extraordinário' in filename_lower:
-        return 'recurso_extraordinario'
-    elif 'decisao-admissibilidade' in filename_lower:
-        return 'decisao_admissibilidade'
-    elif 'agravo' in filename_lower:
-        return 'agravo'
-    return 'outros'
+    # Padrão igual ao usado no PDF Processing
+    match = re.search(r'^\d+-(.+)$', filename)
+
+    if match:
+        doc_type = match.group(1).replace('-', ' ').title()
+    else:
+        doc_type = "outros"
+
+    return doc_type
 
 
 if __name__ == "__main__":
-    print("=== TESTE DE METADADOS ===")
-    print(f"Iniciando processamento em {datetime.now().isoformat()}")
+    print("=== VALIDAÇÃO DE METADADOS (v2) ===")
+    print(f"Iniciando processamento em {datetime.now().isoformat()[:19]}")
 
     try:
         results = validate_pdf_processing('consultor-juridico')
         results.to_csv('metadata_validation_report.csv', index=False)
 
         print("\n=== RESUMO EXECUTIVO ===")
-        print(f"Total de arquivos: {len(results)}")
-        print(f"Sucesso: {len(results[results['status'] == 'OK'])}")
-        print(f"Avisos: {len(results[results['status'] == 'WARNING'])}")
-        print(f"Erros: {len(results[results['status'] == 'ERROR'])}")
+        # Análise otimizada
+        stats = results.groupby('status').size()
+        print(f"\n● Arquivos processados: {len(results)}")
+        print(f"● Sucesso: {stats.get('OK', 0)}")
+        print(f"● Avisos: {stats.get('WARNING', 0)}")
+        print(f"● Erros: {stats.get('ERROR', 0)}")
 
-        print("\n=== DETALHES ===")
-        print(results.groupby(['doc_subtype', 'status']
-                              ).size().unstack(fill_value=0))
+        # Detalhamento de problemas
+        if not results[results['status'] == 'OK'].empty:
+            print("\n🔍 Principais problemas:")
+            problem_df = results[results['status'] != 'OK']
+            print(problem_df[['file', 'issues']].head(
+                5).to_string(index=False))
 
-        problem_files = results[results['status'] != 'OK']
-        if not problem_files.empty:
-            print("\n=== ARQUIVOS COM PROBLEMAS ===")
-            for _, row in problem_files.iterrows():
-                print(f"\n{row['file']} [{row['status']}]")
-                print(f"Problemas: {row['issues']}")
-                if pd.notna(row.get('jurisdiction')):
-                    print(f"Jurisdição: {row['jurisdiction']}")
-        else:
-            print("\nTodos os arquivos processados com sucesso!")
+        print(f"\nRelatório completo salvo em: metadata_validation_report.csv")
 
     except Exception as e:
-        print(f"\nERRO GLOBAL: {str(e)}")
+        print(f"\n❌ ERRO GLOBAL: {str(e)}")
         traceback.print_exc()
 
 # Navegue até a pasta raiz e execute:
