@@ -2,77 +2,91 @@
 
 Avaliação das sétima e oitava sprints do programa de bolsas Compass UOL para formação em Inteligência Artificial para AWS.
 
-***
+# 🌐 Integração API Gateway + Lambda + Telegram Bot (Webhook)
 
-## Execução (Código Fonte)
+Este documento descreve o processo de criação e configuração da comunicação entre o bot do Telegram e a função AWS Lambda via API Gateway utilizando Webhook.
 
-Faça um chatbot para consulta de documentos jurídicos. Para tanto, devem ser carregados os documentos indicados e montada uma base em bucket S3. Esta base deve constituir o RAG (Retrieval Augmented Generation) a ser utilizado com o Bedrock. O mecanismo do chatbot deve ser provido pelo LangChain com Chroma e a interface pelo Telegram. O Cloudwatch deve ser utilizado para gravação de log dos dados processados.
+---
 
-**Especificações**:
+## 🎯 Objetivo
 
-1. Criar um chatbot com [LangChain](https://www.langchain.com/) fazendo a carga a partir de um S3 contendo dos documentos disponibilizados na pasta [dataset](<./dataset>).
-2. Gerar os embeddings com Bedrock e indexar com [Chroma](https://python.langchain.com/docs/integrations/vectorstores/chroma/).
-3. Utilizar o Bedrock como mecanismo de consulta de dados (retrieval).
-4. Expor o chatbot no Telegram.
+Permitir que mensagens enviadas ao bot no Telegram sejam recebidas automaticamente por uma função AWS Lambda através de uma rota HTTP (Webhook) gerenciada pelo API Gateway.
 
-* Exemplos completos:
-  * [Quick Start on RAG (Retrieval-Augmented Generation) for Q&A using AWS Bedrock, ChromaDB, and LangChain](https://medium.com/@thallyscostalat/quick-start-on-rag-retrieval-augmented-generation-for-q-a-using-aws-bedrock-chromadb-and-64c35d966188)
-  * [RAG Application using AWS Bedrock and LangChain](https://dev.to/aws-builders/rag-application-using-aws-bedrock-and-langchain-140b)
-  * [How to Build a Locally Hosted Chatbot w/ Bedrock and More!](https://www.serverlessguru.com/blog/how-to-build-a-locally-hosted-chatbot-with-amazon-bedrock-langchain-and-streamlit)
-  * [How to Build High-Accuracy Serverless RAG Using Amazon Bedrock and Kendra on AWS](https://medium.com/@zekaouinoureddine/how-to-build-high-accuracy-serverless-rag-using-amazon-bedrock-and-kendra-on-aws-9ec9681e4e9b)
+---
 
+## ✅ Etapas realizadas
 
-* Dica 1: usar o [PyPDFLoader](https://python.langchain.com/docs/how_to/document_loader_pdf/) do LangChain.
-* Dica 2: para expor no Telegram olhar o artigo [How to Build a Telegram Bot in 5 Simple Steps](https://dev.to/catheryn/how-to-build-a-telegram-bot-in-5-simple-steps-4964)
+### 1. Criação do Bot no Telegram
+- Foi utilizado o **@BotFather** para criar o bot.
+- Comando: `/newbot`
+- O bot gerado recebeu um **TOKEN**, que foi salvo para uso posterior como variável de ambiente na Lambda (`TELEGRAM_TOKEN`).
 
-### Arquitetura Básica
+---
 
-![post-v1-tts](./assets/sprints_7-8.jpg)
+### 2. Criação da função Lambda
+- Linguagem: **Python 3.11**
+- A função `chatbotTelegramHandler` foi definida para receber requisições HTTP.
+- Foram atribuídas permissões de acesso a S3, Bedrock, CloudWatch (via IAM Role).
+- Foram configuradas as seguintes variáveis de ambiente na Lambda:
+  - `TELEGRAM_TOKEN`
+  - `BUCKET_NAME`
+  - `REGION`
+  - `CHROMA_DIR`
+  - `S3_PREFIX`
 
-***
+---
 
-## O que será avaliado?
+### 3. Configuração da API Gateway (HTTP API)
 
-* Uso de Python no projeto;
-* Aplicação dos recursos AWS solicitados;
-* Execução com as ferramentas indicadas (LangChain, Chroma, Telegram);
-* Entendimento do chatbot e o que ele soluciona;
-* Projeto em produção na cloud AWS;
-* Uso do CloudWatch para gravar os logs dos resultados;
-* Seguir as atividades na ordem proposta;
-* Subir códigos no git ao longo do desenvolvimento;
-* Organização geral do código fonte:
-  * Estrutura de pastas;
-  * Estrutura da lógica de negócio;
-  * Divisão de responsabilidades em arquivos/pastas distintos;
-  * Otimização do código fonte (evitar duplicações de código);
-* Objetividade do README.md;
-* Modelo de organização da equipe para o desenvolvimento do projeto.
+#### a) Criação da API:
+- Tipo: **HTTP API**
+- Nome: `chatbotTelegramAPI`
 
-***
+#### b) Criação da rota:
+- Caminho: `/telegram`
+- Método: `POST`
 
-## Entrega
+#### c) Integração com Lambda:
+- A rota `/telegram` foi conectada à função Lambda.
+- A opção **"Add permissions for API Gateway to invoke Lambda"** foi confirmada automaticamente.
 
-* **O trabalho deve ser feito em grupos de três ou quatro pessoas**;
-  * **Não devem ocorrer repetições das equipes constituídas na sprint anterior**;
-* Criar uma branch no repositório com o formato grupo-número (exemplo: grupo-1);
-* Subir o trabalho na branch da equipe com um README.md:
-  * documentar detalhes sobre como a avaliação foi desenvolvida;
-  * relatar dificuldades conhecidas;
-  * descrever como utilizar o sistema;
-  * fornecer a URL para acesso ao chatbot;
-* 🔨 Disponibilizar o código fonte desenvolvido (observar estruturas de pastas);
-* O prazo de entrega é até às 14h do dia 12/05/2025 no repositório do github (<https://github.com/Compass-pb-aws-2025-JANEIRO/sprints-7-8-pb-aws-janeiro>).
+#### d) Deploy da API:
+- Foi criado o **stage "prod"**.
+- O deploy foi feito manualmente após a criação da rota.
 
-*** 
+#### e) Resultado:
+- URL final do endpoint:
+  ```
+  https://4pr7evvg14.execute-api.us-east-1.amazonaws.com/prod/telegram
+  ```
 
-## Apresentação
+---
 
-* A coordenação do programa de bolsas irá agendar a apresentação das equipes.
-* Cada equipe terá 15 minutos para apresentar seu readme, código e demonstração do funcionamento da aplicação.
-* Na apresentação haverá ao menos uma pessoa da equipe do Programa de Bolsas para acompanhamento.
-* A apresentação será gravada para que os instrutores possam avaliar posteriormente.
-* Após assistir a gravação da apresentação haverão instrutores que darão o feedback técnico.
-* Após todas as apresentações a coordenação também fornecerá o feedback comportamental.
+### 4. Registro do Webhook no Telegram
+- Comando HTTP utilizado:
 
-***
+```
+https://api.telegram.org/bot<TELEGRAM_TOKEN>/setWebhook?url=https://4pr7evvg14.execute-api.us-east-1.amazonaws.com/prod/telegram
+```
+
+- Foi feita uma chamada de teste com `curl` para confirmar:
+```bash
+curl -X POST https://4pr7evvg14.execute-api.us-east-1.amazonaws.com/prod/telegram \
+     -H "Content-Type: application/json" \
+     -d '{"mensagem": "teste"}'
+```
+
+---
+
+### 5. Verificação dos Logs
+- Os logs da execução da Lambda foram verificados no **AWS CloudWatch**.
+- O grupo de logs `/aws/lambda/chatbotTelegramHandler` foi criado automaticamente.
+- As mensagens recebidas via Webhook foram logadas com sucesso.
+
+---
+
+## 🧠 Observações importantes
+
+- Certifique-se de que o **método da rota seja POST.**
+- Sempre realize o **deploy do stage** após qualquer alteração.
+---
