@@ -22,15 +22,11 @@ logging.basicConfig(
 class LegalTextProcessor:
     """Processador simplificado para documentos jurídicos"""
 
-    LEGAL_SEPARATORS = [
-        "\nArtigo", "\n§", "\n\n", "\n", " "
-    ]
-
     def __init__(self):
         self.splitter = RecursiveCharacterTextSplitter(
             chunk_size=pdf_config.CHUNK_SIZE,
             chunk_overlap=pdf_config.CHUNK_OVERLAP,
-            separators=self.LEGAL_SEPARATORS
+            separators=pdf_config.LEGAL_SEPARATORS
         )
 
     def _clean_text(self, text: str) -> str:
@@ -79,7 +75,7 @@ def _extract_path_metadata(s3_key: str) -> Dict[str, str]:
 
 def process_pdf_from_s3(bucket: str, key: str) -> List[Document]:
     """Processa um PDF do S3 com validações, extração de texto, metadados jurídicos e enriquecimento"""
-    MIN_CHUNK_LENGTH = 100  # caracteres
+
     # 🧪 Validação inicial: arquivo existe e tem tamanho mínimo
     try:
         head = s3_client.head_object(Bucket=bucket, Key=key)
@@ -110,7 +106,7 @@ def process_pdf_from_s3(bucket: str, key: str) -> List[Document]:
             processed_docs = []
             for doc in raw_documents:
                 # Filtra chunks muito curtos
-                if len(doc.page_content) < MIN_CHUNK_LENGTH:
+                if len(doc.page_content) < pdf_config.MIN_CHUNK_LENGTH:
                     continue
 
                 # Normaliza metadados
