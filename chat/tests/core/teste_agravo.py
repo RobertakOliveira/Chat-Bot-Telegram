@@ -3,13 +3,12 @@ from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_aws import BedrockEmbeddings
-from langchain_core.documents import Document
 from chat.utils.aws_clients import s3_client, bedrock_runtime
 import re
 
 # Configurações
 BUCKET_NAME = "consultor-juridico"
-PDF_KEY = "juridicos/ARE1467492/agravo/38-agravo.pdf"
+PDF_KEY = "juridicos/38-agravo.pdf"
 TEMPDIR = tempfile.mkdtemp()
 # Em produção, defina um path fixo (ex: /data/chroma_db)
 
@@ -147,4 +146,5 @@ for query in test_queries:
 print(f"\n🎉 Teste completo! Dados persistidos em: {TEMPDIR}")
 
 # Navegue até a pasta raiz e execute:
-#     PYTHONPATH =. python -m chat.tests.core.teste_agravo
+#     PYTHONPATH =. python -m chat.tests.core.teste_agravo // se der erro execute somente o comando:
+#     python -m chat.tests.core.teste_agravo

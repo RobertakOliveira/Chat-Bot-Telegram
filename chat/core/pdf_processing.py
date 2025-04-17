@@ -9,12 +9,7 @@ from langchain_core.documents import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from chat.utils.aws_clients import s3_client
 from chat.utils.config import pdf_config
-import logging
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+from chat.utils.logger import logger
 
 # ======================================================================
 
@@ -22,15 +17,11 @@ logging.basicConfig(
 class LegalTextProcessor:
     """Processador simplificado para documentos jurídicos"""
 
-    LEGAL_SEPARATORS = [
-        "\nArtigo", "\n§", "\n\n", "\n", " "
-    ]
-
     def __init__(self):
         self.splitter = RecursiveCharacterTextSplitter(
             chunk_size=pdf_config.CHUNK_SIZE,
             chunk_overlap=pdf_config.CHUNK_OVERLAP,
-            separators=self.LEGAL_SEPARATORS
+            separators=pdf_config.LEGAL_SEPARATORS
         )
 
     def _clean_text(self, text: str) -> str:
@@ -50,12 +41,12 @@ class LegalTextProcessor:
                     page.page_content = self._clean_text(page.page_content)
                     cleaned_pages.append(page)
                 except Exception as e:
-                    logging.warning(f"🚨 Erro processando página: {str(e)}")
+                    logger.warning(f"🚨 Erro processando página: {str(e)}")
                     continue
 
             return self.splitter.split_documents(cleaned_pages)
         except Exception as e:
-            logging.error(f"❌ Falha no processamento do PDF: {str(e)}")
+            logger.error(f"❌ Falha no processamento do PDF: {str(e)}")
             return []
 
 
@@ -79,16 +70,16 @@ def _extract_path_metadata(s3_key: str) -> Dict[str, str]:
 
 def process_pdf_from_s3(bucket: str, key: str) -> List[Document]:
     """Processa um PDF do S3 com validações, extração de texto, metadados jurídicos e enriquecimento"""
-    MIN_CHUNK_LENGTH = 100  # caracteres
+
     # 🧪 Validação inicial: arquivo existe e tem tamanho mínimo
     try:
         head = s3_client.head_object(Bucket=bucket, Key=key)
         if head.get('ContentLength', 0) < 1024:  # 1KB mínimo
-            logging.warning(
+            logger.warning(
                 f"Ignorando arquivo pequeno: {key} ({head['ContentLength']} bytes)")
             return []
     except Exception as e:
-        logging.error(f"❌ Falha ao acessar {key}: {str(e)}")
+        logger.error(f"❌ Falha ao acessar {key}: {str(e)}")
         return []
 
     # 📥 Download e processamento
@@ -110,7 +101,7 @@ def process_pdf_from_s3(bucket: str, key: str) -> List[Document]:
             processed_docs = []
             for doc in raw_documents:
                 # Filtra chunks muito curtos
-                if len(doc.page_content) < MIN_CHUNK_LENGTH:
+                if len(doc.page_content) < pdf_config.MIN_CHUNK_LENGTH:
                     continue
 
                 # Normaliza metadados
@@ -125,12 +116,12 @@ def process_pdf_from_s3(bucket: str, key: str) -> List[Document]:
                     metadata=clean_metadata
                 ))
 
-            logging.info(
+            logger.info(
                 f"⏳ Processado: {key} → {len(processed_docs)} chunks")
             return processed_docs
 
         except Exception as e:
-            logging.error(f"🚨 Erro processando {key}: {str(e)}")
+            logger.error(f"🚨 Erro processando {key}: {str(e)}")
             return []
 
         finally:
@@ -138,7 +129,7 @@ def process_pdf_from_s3(bucket: str, key: str) -> List[Document]:
             try:
                 os.remove(tmp_file.name)
             except Exception as e:
-                logging.warning(
+                logger.warning(
                     f"❌ Falha ao limpar arquivo temporário: {str(e)}")
 
 
@@ -167,10 +158,10 @@ def process_all_pdfs_in_bucket(bucket: str) -> List[Document]:
             docs = process_pdf_from_s3(
                 pdf['bucket'], pdf['key'])  # ✅ Processa uma vez
             all_docs.extend(docs)
-            logging.info(f"✅ {pdf['key']} → {len(docs)} chunks\n")
+            logger.info(f"✅ {pdf['key']} → {len(docs)} chunks\n")
         except Exception as e:
-            logging.error(f"🚨 Erro processando {pdf['key']}: {str(e)}")
+            logger.error(f"🚨 Erro processando {pdf['key']}: {str(e)}")
 
-    logging.info(
+    logger.info(
         f"📚 Total processado: {len(all_docs)} chunks de {len(pdf_files)} PDFs")
     return all_docs
