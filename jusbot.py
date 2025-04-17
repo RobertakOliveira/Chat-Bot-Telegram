@@ -219,7 +219,22 @@ def criar_menu_principal():
         ["📋 Listar Documentos Disponíveis"],
         ["ℹ️ Sobre o JusBot"]
     ]
-    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=False)
+    return ReplyKeyboardMarkup(
+        keyboard, 
+        resize_keyboard=True, 
+        one_time_keyboard=False,
+        input_field_placeholder="Selecione uma opção ou digite sua pergunta"
+    )
+
+# Adicionar teclado inline como alternativa
+def criar_menu_inline():
+    """Cria um menu inline com botões."""
+    keyboard = [
+        [InlineKeyboardButton("🔍 Consultar Documentos Jurídicos", callback_data="consultar")],
+        [InlineKeyboardButton("📋 Listar Documentos Disponíveis", callback_data="listar")],
+        [InlineKeyboardButton("ℹ️ Sobre o JusBot", callback_data="sobre")]
+    ]
+    return InlineKeyboardMarkup(keyboard)
 
 def criar_menu_documentos():
     """Cria um menu inline para listar documentos."""
@@ -253,13 +268,20 @@ async def enviar_boas_vindas(update: Update, context: CallbackContext) -> None:
     # Obter o nome do usuário
     user_name = update.effective_user.first_name
     
-    # Enviar mensagem de boas-vindas com menu
+    # Enviar mensagem de boas-vindas com o menu principal (teclado regular)
     await update.message.reply_text(
         f"🤖 *JusBot - Assistente Jurídico*\n\n"
         f"Olá, {user_name}! Sou especializado em responder perguntas sobre documentos jurídicos.\n\n"
-        "Selecione uma opção abaixo ou digite sua pergunta diretamente.",
+        "Selecione uma opção abaixo ou digite sua pergunta diretamente.\n\n"
+        "💡 *Nota:* Se os botões não aparecerem, procure pelo ícone de teclado na barra de mensagem ou use o menu abaixo:",
         reply_markup=criar_menu_principal(),
         parse_mode="Markdown"
+    )
+    
+    # Enviar também o menu inline como alternativa para plataformas desktop
+    await update.message.reply_text(
+        "Opções alternativas:",
+        reply_markup=criar_menu_inline()
     )
 
 async def help_command(update: Update, context: CallbackContext) -> None:
@@ -277,11 +299,85 @@ async def help_command(update: Update, context: CallbackContext) -> None:
         "*Importante:* Só respondo a perguntas cujas respostas estão nos documentos disponíveis.",
         parse_mode="Markdown"
     )
+    
+    # Mostrar o menu principal novamente
+    await update.message.reply_text(
+        "Selecione uma opção:",
+        reply_markup=criar_menu_principal()
+    )
 
 async def button_callback(update: Update, context: CallbackContext) -> None:
     """Processa os callbacks dos botões inline."""
     query = update.callback_query
     await query.answer()  # Responde ao callback para remover o "carregando"
+    
+    # Obter o nome do usuário
+    user_name = update.effective_user.first_name
+    
+    # Processar os diferentes callbacks
+    if query.data == "consultar":
+        # Mesma ação que "🔍 Consultar Documentos Jurídicos"
+        processing_message = await query.message.reply_text("🔄 Inicializando base de conhecimento, por favor aguarde... Isso pode demorar alguns instantes.")
+        
+        success, message = inicializar_base_conhecimento()
+        await processing_message.delete()
+        
+        if success:
+            await query.message.reply_text(
+                f"✅ {user_name}, a base de conhecimento foi inicializada! Agora você pode fazer perguntas sobre o conteúdo dos documentos."
+            )
+        else:
+            await query.message.reply_text(f"❌ {user_name}, {message}")
+    
+    elif query.data == "listar":
+        # Mesma ação que "📋 Listar Documentos Disponíveis"
+        processing_message = await query.message.reply_text("🔄 Buscando documentos disponíveis...")
+        
+        arquivos_pdf = carregar_pdfs(DATASET_DIR)
+        
+        # Remover mensagem de processamento
+        await processing_message.delete()
+        
+        if not arquivos_pdf:
+            await query.message.reply_text(f"{user_name}, nenhum documento foi encontrado na pasta dataset/.")
+            return
+            
+        mensagem = f"📚 *{user_name}, aqui estão os documentos disponíveis:*\n\n"
+        for i, (caminho, _) in enumerate(arquivos_pdf, 1):
+            nome_arquivo = caminho.split("/")[-1]
+            mensagem += f"{i}. {nome_arquivo}\n"
+            
+        await query.message.reply_text(
+            mensagem,
+            parse_mode="Markdown"
+        )
+    
+    elif query.data == "sobre":
+        # Mesma ação que "ℹ️ Sobre o JusBot"
+        await query.message.reply_text(
+            f"🤖 *JusBot - Assistente Jurídico*\n\n"
+            f"{user_name}, sou um bot especializado em responder consultas sobre documentos jurídicos.\n\n"
+            "*Características:*\n"
+            "• Consulto apenas os documentos disponíveis na base de dados\n"
+            "• Respondo perguntas somente quando encontro informações nos documentos\n"
+            "• Cito as fontes das informações que forneço\n\n"
+            "*Tecnologias:*\n"
+            "• Amazon Bedrock para processamento de linguagem natural\n"
+            "• ChromaDB para busca vetorial em documentos\n"
+            "• LangChain para RAG (Retrieval Augmented Generation)",
+            parse_mode="Markdown"
+        )
+    
+    elif query.data.startswith("doc_"):
+        # Lidar com a seleção de um documento específico
+        doc_name = query.data[4:]  # Remove o prefixo "doc_"
+        await query.message.reply_text(
+            f"📄 *Documento: {doc_name}*\n\n"
+            f"Você pode fazer perguntas específicas sobre este documento, como:\n\n"
+            f"\"O que {doc_name} diz sobre prazos legais?\"\n\n"
+            "O JusBot buscará informações relevantes para você.",
+            parse_mode="Markdown"
+        )
 
 async def handle_message(update: Update, context: CallbackContext) -> None:
     """Processa mensagens de texto e responde conforme o conteúdo."""
