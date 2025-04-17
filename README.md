@@ -93,8 +93,6 @@ python jusbot.py
 sprints-7-8-pb-aws-janeiro/
 ├── assets/                  # Recursos do projeto
 ├── dataset/                 # Pasta para documentos jurídicos
-├── venv/                    # Ambiente virtual Python
-├── __pycache__/             # Cache do Python
 ├── .env                     # Arquivo de configuração 
 ├── jusbot.py                # Código principal do bot
 ├── Rag_Pipeline.py          # Implementação do pipeline RAG
