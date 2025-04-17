@@ -24,6 +24,8 @@ class BedrockEmbeddingHandler:
             model_id=bedrock_config.MODEL_ID,
             region_name=AWS_REGION
         )
+        logging.info(
+            f"Inicializado BedrockEmbeddings com {bedrock_config.MODEL_ID}")
 
     @retry(wait=wait_exponential(multiplier=1, min=2, max=10),
            stop=stop_after_attempt(3))
@@ -87,8 +89,10 @@ class BedrockEmbeddingHandler:
         return results
 
     def _clean_text(self, text: str) -> str:
-        """Pré-processamento específico para textos jurídicos (mantido)"""
-        return text.replace('\x00', '').strip()[:bedrock_config.TEXT_TRUNCATE]
+        """Truncagem baseada em estimativa de tokens (1 token ≈ 4 caracteres)"""
+        max_chars = int(bedrock_config.TEXT_TRUNCATE *
+                        4 * 0.95)  # Margem de segurança
+        return text.replace('\x00', '')[:max_chars].strip()
 
 
 def initialize_embedding_service():

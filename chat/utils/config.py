@@ -59,48 +59,63 @@ class ConfigLoader:
                 "BEDROCK_MODEL_ID",
                 "amazon.titan-embed-text-v2:0"
             ),
-            "EMBEDDING_DIMENSIONS": int(self._get_param_with_fallback(
-                "/chatbot-juridico/embedding-dimensions",
-                "EMBEDDING_DIMENSIONS",
-                "512"
-            )),
-            "MAX_TOKENS": int(self._get_param_with_fallback(
-                "/chatbot-juridico/max-tokens",
-                "MAX_TOKENS",
-                "8000"
-            )),
-            "BEDROCK_BATCH_SIZE": int(self._get_param_with_fallback(
-                "/chatbot-juridico/bedrock-batch-size",
-                "BEDROCK_BATCH_SIZE",
-                "48"
-            )),
-            "BEDROCK_MAX_RETRIES": int(self._get_param_with_fallback(
-                "/chatbot-juridico/bedrock-max-retries",
-                "BEDROCK_MAX_RETRIES",
-                "3"
-            )),
-            "BEDROCK_BATCH_DELAY": float(self._get_param_with_fallback(
-                "/chatbot-juridico/bedrock-batch-delay",
-                "BEDROCK_BATCH_DELAY",
-                "0.15"
-            )),
-            "BEDROCK_TEXT_TRUNCATE": int(self._get_param_with_fallback(
-                "/chatbot-juridico/bedrock-text-truncate",
-                "BEDROCK_TEXT_TRUNCATE",
-                "6000"
-            )),
+            "EMBEDDING_DIMENSIONS": int(
+                self._get_param_with_fallback(
+                    "/chatbot-juridico/embedding-dimensions",
+                    "EMBEDDING_DIMENSIONS",
+                    "512"
+                )),
+            "BEDROCK_NORMALIZE_EMBEDDINGS": str(
+                self._get_param_with_fallback(
+                    "/chatbot-juridico/bedrock-normalize-embeddings",
+                    "BEDROCK_NORMALIZE_EMBEDDINGS",
+                    "True"
+                )
+            ).lower() in ("true", "1", "t"),  # Converte string para bool
+            "MAX_TOKENS": int(
+                self._get_param_with_fallback(
+                    "/chatbot-juridico/max-tokens",
+                    "MAX_TOKENS",
+                    "8000"
+                )),
+            "BEDROCK_BATCH_SIZE": int(
+                self._get_param_with_fallback(
+                    "/chatbot-juridico/bedrock-batch-size",
+                    "BEDROCK_BATCH_SIZE",
+                    "48"
+                )),
+            "BEDROCK_MAX_RETRIES": int(
+                self._get_param_with_fallback(
+                    "/chatbot-juridico/bedrock-max-retries",
+                    "BEDROCK_MAX_RETRIES",
+                    "3"
+                )),
+            "BEDROCK_BATCH_DELAY": float(
+                self._get_param_with_fallback(
+                    "/chatbot-juridico/bedrock-batch-delay",
+                    "BEDROCK_BATCH_DELAY",
+                    "0.15"
+                )),
+            "BEDROCK_TEXT_TRUNCATE": int(
+                self._get_param_with_fallback(
+                    "/chatbot-juridico/bedrock-text-truncate",
+                    "BEDROCK_TEXT_TRUNCATE",
+                    "7500"  # Margem de segurança para tokenização
+                )),
 
             # Configurações de PDF Processing
-            "CHUNK_SIZE": int(self._get_param_with_fallback(
-                "/chatbot-juridico/chunk-size",
-                "CHUNK_SIZE",
-                "800"
-            )),
-            "CHUNK_OVERLAP": int(self._get_param_with_fallback(
-                "/chatbot-juridico/chunk-overlap",
-                "CHUNK_OVERLAP",
-                "150"
-            )),
+            "CHUNK_SIZE": int(
+                self._get_param_with_fallback(
+                    "/chatbot-juridico/chunk-size",
+                    "CHUNK_SIZE",
+                    "800"
+                )),
+            "CHUNK_OVERLAP": int(
+                self._get_param_with_fallback(
+                    "/chatbot-juridico/chunk-overlap",
+                    "CHUNK_OVERLAP",
+                    "150"
+                )),
             "LEGAL_SEPARATORS": self._get_param_with_fallback(
                 "/chatbot-juridico/legal-separators",
                 "LEGAL_SEPARATORS",
@@ -141,60 +156,82 @@ class PDFConfig:
     """Configurações especializadas para processamento de PDF"""
 
     @property
-    def CHUNK_SIZE(self):
+    def CHUNK_SIZE(self) -> int:
+        """int: Tamanho dos chunks de texto (em caracteres) para divisão do conteúdo PDF."""
         return config.CHUNK_SIZE
 
     @property
-    def CHUNK_OVERLAP(self):
+    def CHUNK_OVERLAP(self) -> int:
+        """int: Número de caracteres de sobreposição entre chunks consecutivos."""
         return config.CHUNK_OVERLAP
 
     @property
-    def LEGAL_SEPARATORS(self):
-        return [s.strip() for s in config.LEGAL_SEPARATORS.split(',')]
+    def LEGAL_SEPARATORS(self) -> list[str]:
+        """
+        list[str]: Separadores de texto válidos para divisão, com entradas vazias filtradas.
+
+        Os separadores são obtidos dividindo e limpando uma string de configuração separada por vírgulas.
+        """
+        return [s.strip() for s in config.LEGAL_SEPARATORS.split(',') if s.strip()]
 
     @property
-    def MIN_CHUNK_LENGTH(self):
+    def MIN_CHUNK_LENGTH(self) -> int:
+        """int: Comprimento mínimo aceitável para chunks (20% do CHUNK_SIZE) para evitar fragmentos pequenos."""
         return int(config.CHUNK_SIZE * 0.2)  # 20% do chunk size
 
     @property
-    def MAX_PAGE_LENGTH(self):
+    def MAX_PAGE_LENGTH(self) -> int:
+        """int: Número máximo de tokens por página, alinhado com o limite do modelo de linguagem."""
         return config.MAX_TOKENS  # Alinhado com limite do modelo
 
     ACCEPTED_MIME_TYPES = {
         'application/pdf',
         'application/x-pdf'
     }
+    """set: Tipos MIME aceitos para arquivos PDF (tipos PDF e X-PDF)."""
 
 
 class BedrockConfig:
     """Configurações especializadas para Bedrock"""
 
     @property
-    def MODEL_ID(self):
+    def MODEL_ID(self) -> str:
+        """str: ID do modelo fundacional da Bedrock a ser utilizado."""
         return config.BEDROCK_MODEL_ID
 
     @property
-    def EMBEDDING_DIMENSIONS(self):
+    def EMBEDDING_DIMENSIONS(self) -> int:
+        """int: Dimensionalidade dos vetores de embeddings gerados."""
         return config.EMBEDDING_DIMENSIONS
 
     @property
-    def MAX_TOKENS(self):
+    def NORMALIZE_EMBEDDINGS(self) -> bool:
+        """bool: Indica se os embeddings devem ser normalizados (útil para operações de similaridade)."""
+        return config.BEDROCK_NORMALIZE_EMBEDDINGS
+
+    @property
+    def MAX_TOKENS(self) -> int:
+        """int: Número máximo de tokens permitidos por requisição, conforme limite do modelo."""
         return config.MAX_TOKENS
 
     @property
-    def BATCH_SIZE(self):
+    def BATCH_SIZE(self) -> int:
+        """int: Quantidade de requisições processadas por lote (melhora throughput)."""
         return config.BEDROCK_BATCH_SIZE
 
     @property
-    def MAX_RETRIES(self):
+    def MAX_RETRIES(self) -> int:
+        """int: Máximo de tentativas para requisições falhas (resiliência a erros transitórios)."""
         return config.BEDROCK_MAX_RETRIES
 
     @property
-    def BATCH_DELAY(self):
+    def BATCH_DELAY(self) -> float:
+        """float: Intervalo em segundos entre lotes de requisições (evita throttling da API)."""
         return config.BEDROCK_BATCH_DELAY
 
     @property
-    def TEXT_TRUNCATE(self):
+    def TEXT_TRUNCATE(self) -> str:
+        """Define qual parte do texto será mantida quando exceder MAX_TOKENS."""
         return config.BEDROCK_TEXT_TRUNCATE
 
 
@@ -207,7 +244,7 @@ bedrock_config = BedrockConfig()
 
 if __name__ == "__main__":
     # Teste de configuração
-    print("\n=== Configurações Carregadas ===")
+    print("\n===  🔒 Configurações Carregadas  🔒===")
     print("Infraestrutura:")
     print(f"- S3 Bucket: {config.S3_BUCKET_NAME}")
     print(f"- Log Group: {config.LOG_GROUP}")
@@ -215,6 +252,7 @@ if __name__ == "__main__":
     print("\nBedrock:")
     print(f"- Model ID: {bedrock_config.MODEL_ID}")
     print(f"- Embedding Dims: {bedrock_config.EMBEDDING_DIMENSIONS}")
+    print(f"- Normalize: {bedrock_config.NORMALIZE_EMBEDDINGS}")
     print(f"- Max Tokens: {bedrock_config.MAX_TOKENS}")
     print(f"- Batch Size: {bedrock_config.BATCH_SIZE}")
     print(f"- Max Retries: {bedrock_config.MAX_RETRIES}")
