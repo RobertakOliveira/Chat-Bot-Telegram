@@ -15,3 +15,6 @@ terraform/.terraform/modules
 
 # Diretório de providers (pode ser incluído no .terraform, mas listado explicitamente por clareza)
 terraform/.terraform/providers
+
+# Arquivo de configuração
+.env
