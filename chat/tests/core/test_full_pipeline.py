@@ -5,18 +5,12 @@ from chat.core.pdf_processing import process_pdf_from_s3
 from chat.core.bedrock_embeddings import BedrockEmbeddingHandler
 from chat.core.query_embeddings import get_query_embedding
 from langchain_core.documents import Document
-import logging
+from chat.utils.logger import logger
 
 # Configurações de teste
 BUCKET_NAME = "consultor-juridico"
 TEST_PDF_KEY = "juridicos/38-agravo.pdf"
 TEMPDIR = tempfile.mkdtemp()
-
-# Configura logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
 
 
 def test_full_pipeline():
@@ -91,7 +85,7 @@ def test_full_pipeline():
         print("\n🎉 Teste concluído com sucesso!")
 
     except Exception as e:
-        logging.error(f"❌ Falha no teste: {str(e)}")
+        logger.error(f"❌ Falha no teste: {str(e)}")
         raise
 
 

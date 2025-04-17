@@ -59,25 +59,6 @@ class ConfigLoader:
                 "BEDROCK_MODEL_ID",
                 "amazon.titan-embed-text-v2:0"
             ),
-            "EMBEDDING_DIMENSIONS": int(
-                self._get_param_with_fallback(
-                    "/chatbot-juridico/embedding-dimensions",
-                    "EMBEDDING_DIMENSIONS",
-                    "512"
-                )),
-            "BEDROCK_NORMALIZE_EMBEDDINGS": str(
-                self._get_param_with_fallback(
-                    "/chatbot-juridico/bedrock-normalize-embeddings",
-                    "BEDROCK_NORMALIZE_EMBEDDINGS",
-                    "True"
-                )
-            ).lower() in ("true", "1", "t"),  # Converte string para bool
-            "MAX_TOKENS": int(
-                self._get_param_with_fallback(
-                    "/chatbot-juridico/max-tokens",
-                    "MAX_TOKENS",
-                    "8000"
-                )),
             "BEDROCK_BATCH_SIZE": int(
                 self._get_param_with_fallback(
                     "/chatbot-juridico/bedrock-batch-size",
@@ -89,6 +70,24 @@ class ConfigLoader:
                     "/chatbot-juridico/bedrock-max-retries",
                     "BEDROCK_MAX_RETRIES",
                     "3"
+                )),
+            "BEDROCK_RETRY_MULTIPLIER": float(
+                self._get_param_with_fallback(
+                    "/chatbot-juridico/bedrock-retry-multiplier",
+                    "BEDROCK_RETRY_MULTIPLIER",
+                    "1"
+                )),
+            "BEDROCK_MIN_RETRY_DELAY": float(
+                self._get_param_with_fallback(
+                    "/chatbot-juridico/bedrock-min-retry-delay",
+                    "BEDROCK_MIN_RETRY_DELAY",
+                    "2"
+                )),
+            "BEDROCK_MAX_RETRY_DELAY": float(
+                self._get_param_with_fallback(
+                    "/chatbot-juridico/bedrock-max-retry-delay",
+                    "BEDROCK_MAX_RETRY_DELAY",
+                    "10"
                 )),
             "BEDROCK_BATCH_DELAY": float(
                 self._get_param_with_fallback(
@@ -116,6 +115,12 @@ class ConfigLoader:
                     "CHUNK_OVERLAP",
                     "150"
                 )),
+            "MAX_TOKENS": int(
+                self._get_param_with_fallback(
+                    "/chatbot-juridico/max-tokens",
+                    "MAX_TOKENS",
+                    "8000"
+                )),
             "LEGAL_SEPARATORS": self._get_param_with_fallback(
                 "/chatbot-juridico/legal-separators",
                 "LEGAL_SEPARATORS",
@@ -141,7 +146,7 @@ class ConfigLoader:
 
         # 3. Usar default
         print(
-            f"[CONFIG] Usando valor padrão para {env_var} (SSM não encontrado)")
+            f"[CONFIG] Usando default para {env_var} (SSM não encontrado)")
         return default
 
     def __getattr__(self, name: str) -> Any:
@@ -184,11 +189,10 @@ class PDFConfig:
         """int: Número máximo de tokens por página, alinhado com o limite do modelo de linguagem."""
         return config.MAX_TOKENS  # Alinhado com limite do modelo
 
-    ACCEPTED_MIME_TYPES = {
-        'application/pdf',
-        'application/x-pdf'
-    }
-    """set: Tipos MIME aceitos para arquivos PDF (tipos PDF e X-PDF)."""
+    @property
+    def ACCEPTED_MIME_TYPES(self) -> set:
+        """Tipos MIME aceitos para upload"""
+        return {'application/pdf', 'application/x-pdf'}
 
 
 class BedrockConfig:
@@ -198,16 +202,6 @@ class BedrockConfig:
     def MODEL_ID(self) -> str:
         """str: ID do modelo fundacional da Bedrock a ser utilizado."""
         return config.BEDROCK_MODEL_ID
-
-    @property
-    def EMBEDDING_DIMENSIONS(self) -> int:
-        """int: Dimensionalidade dos vetores de embeddings gerados."""
-        return config.EMBEDDING_DIMENSIONS
-
-    @property
-    def NORMALIZE_EMBEDDINGS(self) -> bool:
-        """bool: Indica se os embeddings devem ser normalizados (útil para operações de similaridade)."""
-        return config.BEDROCK_NORMALIZE_EMBEDDINGS
 
     @property
     def MAX_TOKENS(self) -> int:
@@ -223,6 +217,18 @@ class BedrockConfig:
     def MAX_RETRIES(self) -> int:
         """int: Máximo de tentativas para requisições falhas (resiliência a erros transitórios)."""
         return config.BEDROCK_MAX_RETRIES
+
+    @property
+    def RETRY_MULTIPLIER(self) -> float:
+        return config.BEDROCK_RETRY_MULTIPLIER
+
+    @property
+    def MIN_RETRY_DELAY(self) -> float:
+        return config.BEDROCK_MIN_RETRY_DELAY
+
+    @property
+    def MAX_RETRY_DELAY(self) -> float:
+        return config.BEDROCK_MAX_RETRY_DELAY
 
     @property
     def BATCH_DELAY(self) -> float:
@@ -251,9 +257,6 @@ if __name__ == "__main__":
 
     print("\nBedrock:")
     print(f"- Model ID: {bedrock_config.MODEL_ID}")
-    print(f"- Embedding Dims: {bedrock_config.EMBEDDING_DIMENSIONS}")
-    print(f"- Normalize: {bedrock_config.NORMALIZE_EMBEDDINGS}")
-    print(f"- Max Tokens: {bedrock_config.MAX_TOKENS}")
     print(f"- Batch Size: {bedrock_config.BATCH_SIZE}")
     print(f"- Max Retries: {bedrock_config.MAX_RETRIES}")
     print(f"- Batch Delay: {bedrock_config.BATCH_DELAY}s")
