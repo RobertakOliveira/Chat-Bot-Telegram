@@ -1,6 +1,5 @@
 # chat/core/bedrock_embeddings.py
 import time
-import logging
 import hashlib
 from typing import List, Dict, Any
 from tenacity import retry, wait_exponential, stop_after_attempt
@@ -8,11 +7,8 @@ from langchain_core.documents import Document
 from langchain_aws import BedrockEmbeddings
 from chat.utils.aws_clients import bedrock_runtime, AWS_REGION
 from chat.utils.config import bedrock_config
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+from chat.utils.logger import logger
+from chat.utils.clean_text import clean_text
 
 
 class BedrockEmbeddingHandler:
@@ -24,19 +20,25 @@ class BedrockEmbeddingHandler:
             model_id=bedrock_config.MODEL_ID,
             region_name=AWS_REGION
         )
-        logging.info(
+        logger.info(
             f"Inicializado BedrockEmbeddings com {bedrock_config.MODEL_ID}")
 
-    @retry(wait=wait_exponential(multiplier=1, min=2, max=10),
-           stop=stop_after_attempt(3))
+    @retry(
+        wait=wait_exponential(
+            multiplier=bedrock_config.RETRY_MULTIPLIER,
+            min=bedrock_config.MIN_RETRY_DELAY,
+            max=bedrock_config.MAX_RETRY_DELAY
+        ),
+        stop=stop_after_attempt(bedrock_config.MAX_RETRIES)
+    )
     def _generate_batch(self, texts: List[str]) -> List[List[float]]:
-        """Gera embeddings com retentativas e logging detalhado"""
+        """Gera embeddings com retentativas e logger detalhado"""
         start_time = time.time()
         try:
             embeddings = self.embeddings.embed_documents(texts)
             processing_time = (time.time() - start_time) * 1000
 
-            logging.info(
+            logger.info(
                 f"Embeddings gerados | "
                 f"Textos: {len(texts)} | "
                 f"Tempo: {processing_time:.2f}ms | "
@@ -45,7 +47,7 @@ class BedrockEmbeddingHandler:
             return embeddings
 
         except Exception as e:
-            logging.error(f"Falha na geração de embeddings: {str(e)}")
+            logger.error(f"Falha na geração de embeddings: {str(e)}")
             raise
 
     def _generate_doc_id(self, text: str) -> str:
@@ -61,7 +63,7 @@ class BedrockEmbeddingHandler:
 
         for i in range(0, len(documents), bedrock_config.BATCH_SIZE):
             batch = documents[i:i + bedrock_config.BATCH_SIZE]
-            texts = [self._clean_text(doc.page_content) for doc in batch]
+            texts = [clean_text(doc.page_content) for doc in batch]
 
             try:
                 embeddings = self._generate_batch(texts)
@@ -75,7 +77,7 @@ class BedrockEmbeddingHandler:
                     })
 
             except Exception as e:
-                logging.error(
+                logger.error(
                     f"Falha no lote {i//bedrock_config.BATCH_SIZE}: {str(e)}")
                 # Registra falha sem interromper o fluxo
                 results.extend([{
@@ -87,12 +89,6 @@ class BedrockEmbeddingHandler:
             time.sleep(bedrock_config.BATCH_DELAY)
 
         return results
-
-    def _clean_text(self, text: str) -> str:
-        """Truncagem baseada em estimativa de tokens (1 token ≈ 4 caracteres)"""
-        max_chars = int(bedrock_config.TEXT_TRUNCATE *
-                        4 * 0.95)  # Margem de segurança
-        return text.replace('\x00', '')[:max_chars].strip()
 
 
 def initialize_embedding_service():
