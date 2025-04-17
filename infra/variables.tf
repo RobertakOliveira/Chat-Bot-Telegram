@@ -39,7 +39,7 @@ variable "owner_tag" {
 variable "instance_type" {
   description = "Tipo da instância EC2"
   type        = string
-  default     = "t2.micro"  # Mude para t2.micro
+  default     = "t2.micro" # Mude para t2.micro
 }
 
 # Declaração da variável "common_tags", que define um conjunto de tags comuns para todos os recursos.
@@ -52,7 +52,7 @@ variable "common_tags" {
     CostCenter  = "TI"
     ManagedBy   = "terraform"
     Environment = "dev"
-    Owner       = "katcilane"  #alterar para o seu nome
+    Owner       = "katcilane" #alterar para o seu nome
     Repository  = "https://github.com/Compass-pb-aws-2025-JANEIRO/sprints-7-8-pb-aws-janeiro"
   }
 }
@@ -60,11 +60,11 @@ variable "common_tags" {
 variable "chatbot_role_arn" {
   description = "ARN da IAM Role do Chatbot"
   type        = string
-  default = ""
+  default     = ""
 }
 
 # ID da instância EC2 que será monitorada
- variable "instance_id" {
-   description = "ID da instância EC2 (para métricas e alarms)"
-   type        = string
- }
+variable "instance_id" {
+  description = "ID da instância EC2 (para métricas e alarms)"
+  type        = string
+}

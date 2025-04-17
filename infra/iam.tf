@@ -1,11 +1,11 @@
 # Role para execução do Terraform
 resource "aws_iam_role" "terraform_execution_role" {
-  name               = "TerraformExecutionRole-Prod"
+  name = "TerraformExecutionRole-Prod"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Action    = "sts:AssumeRole",
-      Effect    = "Allow",
+      Action = "sts:AssumeRole",
+      Effect = "Allow",
       Principal = {
         AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
       }
@@ -34,7 +34,7 @@ resource "aws_iam_policy" "terraform_custom_policy" {
         Effect   = "Allow",
         Resource = "*"
       },
-      
+
       # Permissões para S3 (apenas buckets do projeto)
       {
         Action = [
@@ -42,13 +42,13 @@ resource "aws_iam_policy" "terraform_custom_policy" {
           "s3:PutObject",
           "s3:ListBucket"
         ],
-        Effect   = "Allow",
+        Effect = "Allow",
         Resource = [
           "arn:aws:s3:::chatbot-docs-${var.owner_tag}-*",
           "arn:aws:s3:::chatbot-docs-${var.owner_tag}-*/*"
         ]
       },
-      
+
       # Permissões para DynamoDB (apenas tabela de locks)
       {
         Action = [

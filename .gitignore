@@ -73,6 +73,7 @@ resultados_test.txt
 terraform.tfvars
 .terraform.lock.hcl
 *.tfplan
+infra/plan.out
 
 
 ######################################################################
