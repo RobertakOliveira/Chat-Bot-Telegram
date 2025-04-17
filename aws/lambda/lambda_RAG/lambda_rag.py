@@ -46,14 +46,22 @@ def main():
 
     # 6. Prompt customizado como template de conversa
     prompt = ChatPromptTemplate.from_messages([
-        ("human", "Você é um assistente jurídico altamente especializado. Utilize as informações a seguir para responder de forma clara, técnica e fundamentada:\n\n{context}\n\nPergunta: {input}\n\nResposta:")
+        ("human", "Você é um assistente jurídico altamente especializado. Utilize as informações contidas nos trechos "
+        "dos documentos fornecidos para responder a pergunta a seguir de maneira clara, precisa e fundamentada.\n\n"
+        "Documentos:\n{context}\n\n"
+        "Pergunta:\n{input}\n\n"
+        "Sua resposta deve:\n"
+        "- Utilizar uma linguagem formal e técnica, adequada ao meio jurídico.\n"
+        "- Indicar, se necessário, que não foi possível encontrar uma resposta completa, caso a informação não esteja presente.\n\n"
+        "Resposta:"
+    )
     ])
 
     # 7. Criação da chain
     chain = prompt | model
 
     # 8. Consulta
-    query = "Qual o principal argumento utilizado pelo Ministério Público Federal para defender a execução da pena mesmo após o trânsito em julgado apenas para a acusação?"
+    query = "Qual a tese defendida por Willy Fonseca Tempel em seu Recurso Extraordinário contra o INSS?"
     print(f"\nConsulta: {query}\n")
 
     # 9. Recupera os trechos relevantes
@@ -68,6 +76,7 @@ def main():
         page = doc.metadata.get("page", "n/d")
         print(f"Chunk {i}: Similaridade: {round(score, 4)} | Arquivo: {raw_source}, Página: {page}")
         context_parts.append(doc.page_content)
+
 
     # Junta os conteúdos para o prompt
     context = "\n\n".join(context_parts)
