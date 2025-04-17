@@ -111,10 +111,11 @@ sprints-7-8-pb-aws-janeiro/
 
 ## 👥 Equipe
 
-Leonardo de Freitas Nogueira 
-Luis Herinque Trindade
-Rafael Eich Fernandes
-Simone de Oliveira Santos
+- 👨‍💻 Leonardo de Freitas Nogueira 
+- 👨‍💻 Luis Henrique Trindade 
+- 👨‍💻 Rafael Eich Fernandes 
+- 👩‍💻 Simone de Oliveira Santos 
+
 
 ---
 
