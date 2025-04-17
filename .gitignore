@@ -1,0 +1,43 @@
+# Ambiente virtual
+venv/
+env/
+ENV/
+
+# Arquivos de configuração sensíveis
+.env
+
+# Cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Arquivos de distribuição/compilação
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Diretórios de dados gerados
+chroma_db/
+
+# Logs
+*.log
+
+# Arquivos temporários
+*.tmp
+*.bak
+*.swp
+
