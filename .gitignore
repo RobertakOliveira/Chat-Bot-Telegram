@@ -1,2 +1,7 @@
 .aws-sam
 aws/SamAWS/samconfig.toml
+.terraform
+.venv
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.lock.hcl

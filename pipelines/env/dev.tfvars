@@ -1,5 +1,0 @@
-aws_region = "us-east-1"
-bucket_name = "chatbot-juridico-rag"
-lambda_name = "telegram-chatbot-juridico"
-telegram_token = ""
-log_group_name = "/aws/lambda/telegram-chatbot-juridico"
