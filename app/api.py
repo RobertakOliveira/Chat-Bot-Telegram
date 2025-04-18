@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
-import os
+from config import API_SECRET_KEY, TELEGRAM_BOT_TOKEN
 from dotenv import load_dotenv
 from fastapi.security import APIKeyHeader
 from typing import Optional
@@ -26,7 +26,7 @@ API_KEY_NAME = "X-API-KEY"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 async def get_api_key(api_key: Optional[str] = Depends(api_key_header)):
-    if api_key != os.getenv("API_SECRET_KEY"):
+    if api_key != API_SECRET_KEY:
         raise HTTPException(status_code=403, detail="Invalid API Key")
     return api_key
 
@@ -72,7 +72,7 @@ async def ask_question(question: Question):
 
 # --- Funções Auxiliares ---
 async def telegram_send_message(chat_id: str, text: str):
-    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    bot_token = TELEGRAM_BOT_TOKEN
     if not bot_token:
         raise HTTPException(status_code=500, detail="Telegram bot token not configured")
 
