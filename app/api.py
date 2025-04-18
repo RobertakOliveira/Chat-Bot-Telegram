@@ -61,6 +61,15 @@ async def ask_question(question: Question):
             **rag_response
         }
 
+         # ✅ LOG por usuário (para CloudWatch)
+        logger.info({
+            "chat_id": question.chat_id,
+            "question": question.text,
+            "answer": rag_response["answer"],
+            "confidence": rag_response["confidence"],
+            "sources": rag_response["sources"]
+        })
+
         if question.chat_id:
             await telegram_send_message(question.chat_id, rag_response["answer"])
 
