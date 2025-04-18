@@ -84,7 +84,6 @@ python main.py
 2. No Telegram:
    - Abra uma conversa com seu bot
    - Envie "oi" ou uma "saudação" para receber o menu principal
-   - Selecione "🔍 Consultar Documentos Jurídicos" para inicializar a base de conhecimento
    - Faça perguntas relacionadas aos documentos
 
 ## 📁 Estrutura do Projeto
