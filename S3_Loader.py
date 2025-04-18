@@ -3,7 +3,6 @@ import boto3
 from botocore.exceptions import ClientError
 from langchain_community.document_loaders import PyPDFLoader
 
-
 # Nome do bucket S3 que será utilizado (deve ser único globalmente na AWS)
 bucket_name = "meu-bucket-pdfs-eich-1407-pb-jan"
 
