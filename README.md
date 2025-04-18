@@ -78,7 +78,7 @@ aws configure
 
 1. Execute o bot:
 ```bash
-python jusbot.py
+python main.py
 ```
 
 2. No Telegram:
@@ -91,22 +91,35 @@ python jusbot.py
 
 ```
 sprints-7-8-pb-aws-janeiro/
-├── assets/                  # Recursos do projeto
-├── dataset/                 # Pasta para documentos jurídicos
-├── .env                     # Arquivo de configuração 
-├── jusbot.py                # Código principal do bot
-├── Rag_Pipeline.py          # Implementação do pipeline RAG
-├── README.md                # Esta documentação
+│
+├── main.py                  # Ponto de entrada da aplicação, interface Telegram
+│
+├── README.md                # Documentação do projeto
 ├── requirements.txt         # Dependências do projeto
-└── S3_Loader.py             # Módulo para carregamento de documentos do S3
+├── .env                     # Arquivo de variáveis de ambiente
+├── .gitignore               # Arquivos ignorados pelo git
+│
+├── telegram_bot/            # Módulo de processamento do bot
+│   ├── __init__.py          # Torna o diretório um pacote Python
+│   └── telegram_bot.py      # Lógica principal de processamento
+│
+├── Rag_Pipeline.py          # Pipeline de RAG (Retrieval Augmented Generation)
+├── S3_Loader.py             # Carregar documentos do S3 da AWS
+│
+├── assets/                  #  Recursos do projeto
+│
+└── dataset/                 # Pasta para documentos jurídicos
 ```
 
 ## 📝 Arquivos Principais
 
-- **jusbot.py**: Implementação do bot do Telegram com ChromaDB
-- **Rag_Pipeline.py**: Pipeline de RAG (Retrieval Augmented Generation)
-- **S3_Loader.py**: Funções para upload de documentos para S3
+- **main.py**: Ponto de entrada da aplicação. Contém a lógica de interação com o usuário via Telegram, incluindo comandos e mensagens.
 
+- **telegram_bot/telegram_bot.py**:Módulo com as funções principais do bot, como processamento das mensagens, consultas jurídicas, saudação e envio de logs para o CloudWatch.
+
+- **Rag_Pipeline.py**:Implementa a pipeline RAG (Retrieval-Augmented Generation), que usa embeddings e busca vetorial para consultar documentos jurídicos de forma inteligente.
+
+- **S3_Loader.py**:Responsável por interagir com o AWS S3: envia e carrega documentos jurídicos que serão usados para gerar a base de conhecimento do bot.
 ---
 
 ## 👥 Equipe
