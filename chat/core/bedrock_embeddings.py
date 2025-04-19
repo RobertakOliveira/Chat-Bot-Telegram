@@ -7,8 +7,10 @@ from langchain_core.documents import Document
 from langchain_aws import BedrockEmbeddings
 from chat.utils.aws_clients import bedrock_runtime, AWS_REGION
 from chat.utils.config import bedrock_config
-from chat.utils.logger import logger
 from chat.utils.clean_text import clean_text
+from chat.utils.logger import get_logger
+
+logger = get_logger("bedrock_embeddings")
 
 
 class BedrockEmbeddingHandler:
@@ -92,4 +94,5 @@ class BedrockEmbeddingHandler:
 
 
 def initialize_embedding_service():
+    """Inicializa o serviço de embeddings"""
     return BedrockEmbeddingHandler()
