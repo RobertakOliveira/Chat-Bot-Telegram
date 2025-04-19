@@ -15,32 +15,18 @@ GIT_REPO="https://github.com/Compass-pb-aws-2025-JANEIRO/sprints-7-8-pb-aws-jane
 LOG_FILE="/var/log/chatbot-setup.log"
 SCRIPTS_DIR="$APP_DIR/scripts"
 
-# Verificação de recursos mínimos para execução do script
-MIN_MEMORY=1800 # 1.8GB
-MIN_CPU=1       # 1 vCPU
-
-TOTAL_MEM=$(free -m | awk '/Mem:/ {print $2}')
-TOTAL_CPU=$(nproc)
-
-if [ "$TOTAL_MEM" -lt "$MIN_MEMORY" ]; then
-  echo "⚠️  Memória insuficiente! Mínimo recomendado: ${MIN_MEMORY}MB" | tee -a "$LOG_FILE"
-fi
-
-if [ "$TOTAL_CPU" -lt "$MIN_CPU" ]; then
-  echo "⚠️  CPUs insuficientes! Mínimo recomendado: ${MIN_CPU}vCPU" | tee -a "$LOG_FILE"
-fi
-
-# Criar diretório de scripts
-mkdir -p "$SCRIPTS_DIR"
-
-# Função para registrar logs com diferentes níveis
+# ----------------------------
+# FUNÇÃO DE LOG
+# ----------------------------
 log() {
     local level=$1
     local message=$2
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" | tee -a "$LOG_FILE"
 }
 
-# Função para verificar erros
+# ----------------------------
+# FUNÇÃO PARA VERIFICAR ERROS
+# ----------------------------
 check_error() {
     local exit_code=$1
     local message=$2
@@ -50,7 +36,9 @@ check_error() {
     fi
 }
 
-# Função para executar comandos com tratamento de erro
+# ----------------------------
+# FUNÇÃO PARA EXECUTAR COMANDOS
+# ----------------------------
 run_cmd() {
     local cmd=$1
     local desc=$2
@@ -59,46 +47,75 @@ run_cmd() {
     check_error $? "$desc"
 }
 
-# Função para verificar a conexão com a internet
-check_internet_connection() {
-    log "INFO" "Verificando conexão com a internet..."
-    if ! ping -c 1 google.com &> /dev/null; then
-        log "ERROR" "Sem conexão com a internet. Verifique a configuração de rede da EC2."
-        exit 1
-    fi
-    log "INFO" "Conexão com a internet verificada com sucesso."
-}
+# ----------------------------
+# 1. VERIFICAR CONEXÃO À INTERNET
+# ----------------------------
+log "INFO" "Verificando conexão com a internet..."
 
-# Função para verificar acessibilidade do repositório
-check_git_repo() {
-    log "INFO" "Verificando acessibilidade do repositório $GIT_REPO..."
-    if ! git ls-remote "$GIT_REPO" &> /dev/null; then
-        log "ERROR" "Não foi possível acessar o repositório $GIT_REPO. Verifique a URL ou as permissões de acesso."
-        exit 1
-    fi
-    log "INFO" "Repositório $GIT_REPO acessível com sucesso."
-}
+ping -c 4 google.com > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    log "ERROR" "Sem conexão com a internet! Verifique a configuração de rede."
+    exit 1
+else
+    log "INFO" "Conexão com a internet estabelecida."
+fi
 
 # ----------------------------
-# 1. PREPARAÇÃO DO SISTEMA
+# 2. VERIFICAR A URL DO REPOSITÓRIO
+# ----------------------------
+log "INFO" "Verificando URL do repositório..."
+
+git ls-remote $GIT_REPO > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    log "ERROR" "Falha ao acessar o repositório. Verifique a URL ou permissões de acesso."
+    exit 1
+else
+    log "INFO" "Repositório acessível com sucesso."
+fi
+
+# ----------------------------
+# 3. VERIFICAÇÃO DE RECURSOS MÍNIMOS
+# ----------------------------
+MIN_MEMORY=1800 # 1.8GB
+MIN_CPU=1       # 1 vCPU
+
+TOTAL_MEM=$(free -m | awk '/Mem:/ {print $2}')
+TOTAL_CPU=$(nproc)
+
+if [ "$TOTAL_MEM" -lt "$MIN_MEMORY" ]; then
+  log "ERROR" "Memória insuficiente! Mínimo recomendado: ${MIN_MEMORY}MB"
+  exit 1
+fi
+
+if [ "$TOTAL_CPU" -lt "$MIN_CPU" ]; then
+  log "ERROR" "CPUs insuficientes! Mínimo recomendado: ${MIN_CPU}vCPU"
+  exit 1
+fi
+
+# ----------------------------
+# 4. CRIAR DIRETÓRIO DE SCRIPTS
+# ----------------------------
+mkdir -p "$SCRIPTS_DIR"
+
+# ----------------------------
+# 5. PREPARAÇÃO DO SISTEMA
 # ----------------------------
 log "INFO" "Iniciando provisionamento da instância EC2"
 
-# Atualiza pacotes
 run_cmd "apt-get update -y" "Atualizando pacotes do sistema"
 run_cmd "apt-get upgrade -y" "Atualizando sistema"
 
-# Instala dependências essenciais
+# Instalar dependências essenciais
 run_cmd "apt-get install -y python3-pip python3-dev libssl-dev libffi-dev nginx git libpq-dev python3-venv build-essential unzip wget" "Instalando dependências básicas"
 
 # ----------------------------
-# 2. CONFIGURAÇÃO DO PYTHON
+# 6. CONFIGURAÇÃO DO PYTHON
 # ----------------------------
 run_cmd "pip3 install --upgrade pip" "Atualizando pip"
 run_cmd "pip3 install virtualenv" "Instalando virtualenv"
 
 # ----------------------------
-# 3. ESTRUTURA DE DIRETÓRIOS
+# 7. ESTRUTURA DE DIRETÓRIOS
 # ----------------------------
 log "INFO" "Criando estrutura de diretórios..."
 mkdir -p "$APP_DIR/app" || check_error $? "Criar diretório app"
@@ -111,11 +128,8 @@ run_cmd "chown -R $APP_USER:$APP_USER $APP_DIR" "Ajustando permissões"
 run_cmd "chmod -R 755 $APP_DIR" "Ajustando permissões"
 
 # ----------------------------
-# 4. BAIXAR CÓDIGO-FONTE
+# 8. BAIXAR CÓDIGO-FONTE
 # ----------------------------
-check_internet_connection    # Verifica se a conexão com a internet está ativa
-check_git_repo               # Verifica se o repositório é acessível
-
 if [ ! -d "$APP_DIR/.git" ]; then
     run_cmd "git clone $GIT_REPO $APP_DIR" "Clonando repositório"
 else
@@ -123,7 +137,7 @@ else
 fi
 
 # ----------------------------
-# 5. CONFIGURAR VIRTUALENV
+# 9. CONFIGURAR VIRTUALENV
 # ----------------------------
 run_cmd "python3 -m virtualenv $APP_DIR/venv" "Criando virtualenv"
 
@@ -131,19 +145,19 @@ run_cmd "python3 -m virtualenv $APP_DIR/venv" "Criando virtualenv"
 log "INFO" "Instalando dependências Python..."
 source "$APP_DIR/venv/bin/activate" || check_error $? "Ativar virtualenv"
 
-pip_packages=( 
-    "langchain"
-    "chromadb"
-    "pypdf"
-    "sentence-transformers"
-    "flask"
-    "fastapi"
-    "uvicorn"
-    "python-dotenv"
-    "boto3"
-    "awscli"
-    "python-multipart"
-    "transformers"
+pip_packages=( \
+    "langchain" \
+    "chromadb" \
+    "pypdf" \
+    "sentence-transformers" \
+    "flask" \
+    "fastapi" \
+    "uvicorn" \
+    "python-dotenv" \
+    "boto3" \
+    "awscli" \
+    "python-multipart" \
+    "transformers" \
 )
 
 for package in "${pip_packages[@]}"; do
@@ -153,7 +167,7 @@ done
 deactivate
 
 # ----------------------------
-# 6. CONFIGURAÇÕES DE AMBIENTE
+# 10. CONFIGURAÇÕES DE AMBIENTE
 # ----------------------------
 log "INFO" "Configurando variáveis de ambiente..."
 cat <<EOF > "$APP_DIR/.env" || check_error $? "Criar arquivo .env"
@@ -178,7 +192,7 @@ run_cmd "chown $APP_USER:$APP_USER $APP_DIR/.env" "Protegendo .env"
 run_cmd "chmod 600 $APP_DIR/.env" "Protegendo .env"
 
 # ----------------------------
-# 7. CONFIGURAR SERVIÇO SYSTEMD
+# 11. CONFIGURAR SERVIÇO SYSTEMD
 # ----------------------------
 log "INFO" "Configurando serviço da API..."
 cat <<EOF > "/etc/systemd/system/chatbot-api.service" || check_error $? "Criar serviço systemd"
@@ -202,7 +216,7 @@ WantedBy=multi-user.target
 EOF
 
 # ----------------------------
-# 8. CONFIGURAR NGINX
+# 12. CONFIGURAR NGINX
 # ----------------------------
 log "INFO" "Configurando Nginx como proxy reverso..."
 cat <<EOF > "/etc/nginx/sites-available/chatbot" || check_error $? "Criar configuração Nginx"
@@ -231,7 +245,7 @@ run_cmd "nginx -t" "Testar configuração Nginx"
 run_cmd "systemctl restart nginx" "Reiniciar Nginx"
 
 # ----------------------------
-# 9. INICIAR SERVIÇOS
+# 13. INICIAR SERVIÇOS
 # ----------------------------
 log "INFO" "Iniciando serviços..."
 run_cmd "systemctl daemon-reload" "Recarregar daemon systemd"
@@ -241,7 +255,7 @@ run_cmd "systemctl enable nginx" "Habilitar Nginx"
 run_cmd "systemctl restart nginx" "Reiniciar Nginx"
 
 # ----------------------------
-# 10. FINALIZAÇÃO
+# 14. FINALIZAÇÃO
 # ----------------------------
 log "INFO" "Provisionamento concluído com sucesso!"
 log "INFO" "Informações de acesso:"
@@ -250,7 +264,7 @@ log "INFO" " - Nginx: http://$(curl -s http://169.254.169.254/latest/meta-data/p
 log "INFO" " - Logs da API: journalctl -u chatbot-api -f"
 log "INFO" " - Logs do Nginx: tail -f $APP_DIR/logs/nginx-*.log"
 
-# Configurar log rotation (adicione no final):
+# Configurar log rotation
 echo "Configurando log rotation..."
 cat <<EOF > /etc/logrotate.d/chatbot
 ${APP_DIR}/logs/*.log {
@@ -263,6 +277,6 @@ ${APP_DIR}/logs/*.log {
   create 640 ubuntu ubuntu
   sharedscripts
 }
-EOF # isso significa que os logs serão rotacionados diariamente, mantendo 7 dias de logs, e comprimindo os logs antigos.
+EOF
 
 exit 0
