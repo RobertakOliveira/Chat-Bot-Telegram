@@ -1,20 +1,47 @@
+import json
+from pathlib import Path
+from collections import defaultdict
+from langchain_community.document_loaders import PyPDFLoader
 from chat.core.pdf_processing import process_pdf_from_s3, process_all_pdfs_in_bucket
+import logging
+from chat.utils.logger import get_logger
+
+# logo no topo:
+logger = get_logger("test_pdfs")
+logger.setLevel(logging.DEBUG)
 
 
 def test_single_pdf():
     # Teste com um PDF específico
-    bucket = "consultor-juridico"
+    bucket = "consultor-juridico"  # Substitua pelo seu bucket S3
     # Substitua por um arquivo real 16-acordao-recorrido.pdf
-    key = "78-agravo.pdf"
+    key = "juridicos/16-acordao-recorrido.pdf"
+    output_file = "single_pdf_chunks.txt"
 
+    # Processa o PDF
     documents = process_pdf_from_s3(bucket, key)
 
-    print(f"\n📊 Total de chunks gerados: {len(documents)}")
-    print("\n📈 Metadados do primeiro chunk:")
-    print(documents[0].metadata)
+    # Exibe resumo no console (opcional)
+    logger.info(
+        "\n📊 Total de chunks gerados: %d\n📈 Metadados do primeiro chunk:\n%s\n📝 Texto do primeiro chunk (início):\n%s ..." % (
+            len(documents),
+            json.dumps(documents[0].metadata, indent=2, ensure_ascii=False),
+            documents[0].page_content[:500]
+        )
+    )
 
-    print("\n📝 Texto do primeiro chunk (início):")
-    print(documents[0].page_content[:500] + "...")
+    # Grava todos os chunks em um arquivo .txt
+    with open(output_file, "w", encoding="utf-8") as f:
+        f.write(f"PDF: {key}\n")
+        f.write(f"Total de chunks gerados: {len(documents)}\n\n")
+        for idx, doc in enumerate(documents, start=1):
+            f.write(f"=== Chunk {idx} ===\n")
+            f.write(f"Metadados: {doc.metadata}\n")
+            f.write("Conteúdo:\n")
+            f.write(doc.page_content)
+            f.write("\n\n")
+
+    print(f"🔍 Saída gravada em {output_file}")
 
 
 def test_all_pdfs():
@@ -22,18 +49,18 @@ def test_all_pdfs():
     bucket = "consultor-juridico"
     all_docs = process_all_pdfs_in_bucket(bucket)
 
-    print(f"\n📊 Total de documentos processados: {len(all_docs)}")
+    logger.info(f"\n📊 Total de documentos processados: {len(all_docs)}")
 
     # Exibir estatísticas básicas
-    from collections import defaultdict
+
     doc_types = defaultdict(int)
 
     for doc in all_docs:
-        doc_types[doc.metadata.get('doc_subtype', 'outros')] += 1
+        doc_types[doc.metadata.get('doc_type', 'outros')] += 1
 
-    print("\n📈 Distribuição de tipos documentais:")
+    logger.info("\n📈 Distribuição de tipos documentais:")
     for doc_type, count in doc_types.items():
-        print(f"- {doc_type}: {count}")
+        logger.info(f"- {doc_type}: {count}")
 
 
 def test_all_pdfs_com_metadados():
@@ -44,7 +71,7 @@ def test_all_pdfs_com_metadados():
     # Nome do arquivo onde a saída será salva
     output_file = "output_documentos_processados.txt"
 
-    print(f"\n📊 Total de documentos processados: {len(all_docs)}")
+    logger.info(f"\n📊 Total de documentos processados: {len(all_docs)}")
 
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(f"📊 Total de documentos processados: {len(all_docs)}\n\n")
@@ -57,11 +84,11 @@ def test_all_pdfs_com_metadados():
             f.write(f"📖 Texto (início): {doc.page_content[:500]}...\n\n")
 
         # Exibir estatísticas básicas
-        from collections import defaultdict
+
         doc_types = defaultdict(int)
 
         for doc in all_docs:
-            doc_types[doc.metadata.get('doc_subtype', 'outros')] += 1
+            doc_types[doc.metadata.get('doc_type', 'outros')] += 1
 
         f.write("\n📈 Distribuição de tipos documentais:\n")
         for doc_type, count in doc_types.items():
@@ -74,14 +101,35 @@ def test_all_pdfs_com_metadados():
     print(f"🔍 Saída gravada em {output_file}")
 
 
+def test_local_pdf_page_count():
+    # Teste com um PDF local (exemplo: 78-agravo.pdf)
+    # Caminho absoluto robusto
+    base_dir = Path(__file__).resolve().parent.parent.parent.parent
+    pdf_path = base_dir / "infra" / "juridicos" / "78-agravo.pdf"
+
+    if not pdf_path.exists():
+        logger.error(f"❌ Arquivo não encontrado: {pdf_path}")
+        return
+
+    loader = PyPDFLoader(str(pdf_path), mode="page")
+    docs = loader.load()
+
+    logger.info(f"📄 Total de páginas detectadas: {len(docs)}")
+    for i, doc in enumerate(docs, start=1):
+        logger.info(f"📑 Página {i} → {len(doc.page_content)} caracteres")
+
+
 if __name__ == "__main__":
-    print("=== TESTE DE PDF ÚNICO ===")
+    logger.info("=== TESTE DE PDF ÚNICO ===")
     test_single_pdf()
 
-    # print("\n=== TESTE DE TODOS OS PDFs ===")
+    # logger.info("\n=== TESTE DE PDF ÚNICO COM CONTAGEM DE PÁGINAS ===")
+    # test_local_pdf_page_count()
+
+    # logger.info("\n=== TESTE DE TODOS OS PDFs ===")
     # test_all_pdfs()
 
-    # print("\n=== TESTE DE TODOS OS PDFs COM METADADOS ===")
+    # logger.info("\n=== TESTE DE TODOS OS PDFs COM METADADOS ===")
     # test_all_pdfs_com_metadados()
 
 # Teste local rápido

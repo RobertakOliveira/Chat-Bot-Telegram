@@ -1,9 +1,9 @@
 import tempfile
 from langchain_community.vectorstores import Chroma
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_aws import BedrockEmbeddings
-from chat.utils.aws_clients import s3_client, bedrock_runtime
+from chat.utils.aws_clients import bedrock_runtime, AWS_REGION
+from chat.utils.config import bedrock_config
+from chat.core.pdf_processing import process_pdf_from_s3
 import re
 
 # Configurações
@@ -14,85 +14,24 @@ TEMPDIR = tempfile.mkdtemp()
 
 print("🔍 Iniciando teste com o agravo de instrumento direto ao S3....")
 
-# 1. Download do PDF
+# 1. Processamento do PDF usando suas funções
+print(f"📥 Processando {PDF_KEY} do S3 com suas funções personalizadas...")
+try:
+    documents = process_pdf_from_s3(BUCKET_NAME, PDF_KEY)
 
-
-def download_from_s3(bucket, key):
-    """Download robusto com tratamento de erros"""
-    try:
-        # Verifica se o arquivo existe
-        s3_client.head_object(Bucket=bucket, Key=key)
-
-        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp_file:
-            s3_client.download_fileobj(bucket, key, tmp_file)
-            print(f"✅ Download concluído: s3://{bucket}/{key}")
-            return tmp_file.name
-
-    except Exception as e:
-        print(f"❌ Erro crítico no download:")
-        print(f"- Tipo: {type(e).__name__}")
-        print(f"- Mensagem: {str(e)}")
-        print("\nVerifique:")
-        print(f"1. Se o arquivo existe: aws s3 ls s3://{bucket}/{key}")
-        print("2. Suas permissões AWS com: aws sts get-caller-identity")
-        print("3. Se a região está correta (us-east-1)")
+    if not documents:
+        print("❌ Nenhum documento foi processado - verifique os logs para detalhes")
         exit()
 
+    print(
+        f"✅ Gerados {len(documents)} chunks dos documentos jurídicos processados")
+    print(f"📝 Metadados do primeiro documento:")
+    print(documents[0].metadata)
+    print("---")
 
-print(f"📥 Baixando {PDF_KEY} do S3...")
-local_pdf = download_from_s3(BUCKET_NAME, PDF_KEY)
-
-# 2. Processamento Especializado para Documentos Jurídicos
-
-
-def clean_legal_text(text):
-    """Limpeza avançada para textos jurídicos"""
-    if not text:
-        return ""
-
-    # Normalização de espaços e quebras
-    text = re.sub(r'(\n\s*){2,}', '\n\n', text)  # Múltiplas quebras -> 2
-    # Remove espaços antes pontuação
-    text = re.sub(r'(?<=\w)\s+(?=[.,;:])', '', text)
-    text = re.sub(r'(\d)\s+(?=\d)', r'\1', text)  # Junta números
-    return text.strip()
-
-
-print("✂️ Processando e dividindo em chunks jurídicos...")
-try:
-    loader = PyPDFLoader(local_pdf)
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=800,
-        chunk_overlap=150,
-        separators=[
-            "\n\n",
-            "EMENTA:",
-            "ACÓRDÃO",
-            "Vistos, relatados e discutidos estes autos",
-            "\n",
-            " ",  # Último recurso
-        ]
-    )
-
-    documents = []
-    for page in loader.load():
-        clean_text = clean_legal_text(page.page_content)
-        chunks = text_splitter.create_documents(
-            [clean_text],
-            [{
-                "source": "38-agravo.pdf",
-                "page": page.metadata["page"],
-                "doc_type": "agravo"
-            }]
-        )
-        documents.extend(chunks)
-    print(f"✅ Gerados {len(documents)} chunks jurídicos")
 except Exception as e:
-    print(f"❌ Falha no processamento do PDF:")
+    print(f"❌ Falha no processamento personalizado:")
     print(f"- Erro: {str(e)}")
-    print("\nSoluções possíveis:")
-    print("1. Verifique se o PDF não está corrompido")
-    print("2. Tente outro parser: from langchain_community.document_loaders import UnstructuredPDFLoader")
     exit()
 
 # 3. Configuração do Bedrock
@@ -100,7 +39,8 @@ print("🧠 Configurando Bedrock Titan...")
 try:
     embeddings = BedrockEmbeddings(
         client=bedrock_runtime,
-        model_id="amazon.titan-embed-text-v1"
+        model_id=bedrock_config.MODEL_ID,
+        region_name=AWS_REGION
     )
 except Exception as e:
     print(f"❌ Falha na configuração do Bedrock:")
@@ -116,6 +56,7 @@ try:
         embedding=embeddings,
         persist_directory=TEMPDIR  # "/data/chroma_db"  Path fixo
     )
+    print(f"✅ Vetorstore criado com {len(documents)} documentos")
 except Exception as e:
     print(f"❌ Falha na criação do ChromaDB:")
     print(f"- Erro: {str(e)}")
@@ -137,7 +78,8 @@ for query in test_queries:
     try:
         results = vector_db.similarity_search(query, k=1)
         for doc in results:
-            print(f"📌 Página {doc.metadata['page']}:")
+            print(
+                f"📌 Página {doc.metadata['page']} ({doc.metadata['doc_type']}):")
             print(doc.page_content[:300] + "...")
             print("---")
     except Exception as e:
