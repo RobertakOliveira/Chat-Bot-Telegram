@@ -15,9 +15,6 @@ GIT_REPO="https://github.com/Compass-pb-aws-2025-JANEIRO/sprints-7-8-pb-aws-jane
 LOG_FILE="/var/log/chatbot-setup.log"
 SCRIPTS_DIR="$APP_DIR/scripts"
 
-
-
-
 # Verificação de recursos mínimos para execução do script
 MIN_MEMORY=1800 # 1.8GB
 MIN_CPU=1       # 1 vCPU
@@ -62,6 +59,26 @@ run_cmd() {
     check_error $? "$desc"
 }
 
+# Função para verificar a conexão com a internet
+check_internet_connection() {
+    log "INFO" "Verificando conexão com a internet..."
+    if ! ping -c 1 google.com &> /dev/null; then
+        log "ERROR" "Sem conexão com a internet. Verifique a configuração de rede da EC2."
+        exit 1
+    fi
+    log "INFO" "Conexão com a internet verificada com sucesso."
+}
+
+# Função para verificar acessibilidade do repositório
+check_git_repo() {
+    log "INFO" "Verificando acessibilidade do repositório $GIT_REPO..."
+    if ! git ls-remote "$GIT_REPO" &> /dev/null; then
+        log "ERROR" "Não foi possível acessar o repositório $GIT_REPO. Verifique a URL ou as permissões de acesso."
+        exit 1
+    fi
+    log "INFO" "Repositório $GIT_REPO acessível com sucesso."
+}
+
 # ----------------------------
 # 1. PREPARAÇÃO DO SISTEMA
 # ----------------------------
@@ -96,6 +113,9 @@ run_cmd "chmod -R 755 $APP_DIR" "Ajustando permissões"
 # ----------------------------
 # 4. BAIXAR CÓDIGO-FONTE
 # ----------------------------
+check_internet_connection    # Verifica se a conexão com a internet está ativa
+check_git_repo               # Verifica se o repositório é acessível
+
 if [ ! -d "$APP_DIR/.git" ]; then
     run_cmd "git clone $GIT_REPO $APP_DIR" "Clonando repositório"
 else
@@ -111,7 +131,7 @@ run_cmd "python3 -m virtualenv $APP_DIR/venv" "Criando virtualenv"
 log "INFO" "Instalando dependências Python..."
 source "$APP_DIR/venv/bin/activate" || check_error $? "Ativar virtualenv"
 
-pip_packages=(
+pip_packages=( 
     "langchain"
     "chromadb"
     "pypdf"
