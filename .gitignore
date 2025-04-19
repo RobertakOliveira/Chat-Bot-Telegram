@@ -113,6 +113,7 @@ cache/lm-studio/
 *.sqlite3
 *.env
 .env*.local
+.env_bootstrap
 
 ######################################################################
 #                           SISTEMA OPERACIONAL                       #

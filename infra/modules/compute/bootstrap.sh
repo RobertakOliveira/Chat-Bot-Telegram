@@ -9,11 +9,40 @@
 # ----------------------------
 # CONFIGURAÇÕES GERAIS
 # ----------------------------
+
+#!/bin/bash
+
+# ==============================================
+# SCRIPT DE PROVISIONAMENTO - CHATBOT JURÍDICO
+# Versão: 3.1
+# Autor: Katcilane Souza
+# ==============================================
+
+# ----------------------------
+# CONFIGURAÇÕES GERAIS
+# ----------------------------
 APP_DIR="/opt/chatbot"
 APP_USER="ubuntu"
-GIT_REPO="https://github.com/Compass-pb-aws-2025-JANEIRO/sprints-7-8-pb-aws-janeiro"
+REPO_URL="github.com/Compass-pb-aws-2025-JANEIRO/sprints-7-8-pb-aws-janeiro"
 LOG_FILE="/var/log/chatbot-setup.log"
 SCRIPTS_DIR="$APP_DIR/scripts"
+
+# Carrega token do GitHub
+if [ -f ".env_bootstrap" ]; then
+    export $(grep -v '^#' .env_bootstrap | xargs)
+fi
+
+# Valida token
+if [[ -z "$GITHUB_TOKEN" ]]; then
+    echo "[ERRO] Variável GITHUB_TOKEN não definida. Crie o arquivo .env_bootstrap com: GITHUB_TOKEN=seu_token"
+    exit 1
+fi
+
+# Define URL com autenticação
+GIT_REPO="https://${GITHUB_TOKEN}@${REPO_URL}"
+
+
+
 
 # ----------------------------
 # FUNÇÃO DE LOG
