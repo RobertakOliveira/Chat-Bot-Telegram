@@ -1,7 +1,8 @@
 # chat/tests/core/test_aws_integration.py
 from chat.core.pdf_processing import process_all_pdfs_in_bucket, process_pdf_from_s3
-from chat.utils.logger import logger
+from chat.utils.logger import get_logger
 
+logger = get_logger("test_aws_integration")
 
 # 1. Configuração do Teste (ajuste conforme necessário)
 TEST_BUCKET = "consultor-juridico"  # Altere para seu bucket real
