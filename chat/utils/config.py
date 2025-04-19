@@ -17,6 +17,7 @@ SSM > Env Vars > Default Values
 """
 
 import os
+import re
 from typing import Any
 from botocore.exceptions import ClientError, NoCredentialsError
 
@@ -31,6 +32,7 @@ class ConfigLoader:
     """Carrega configurações do SSM com fallbacks inteligentes (Singleton)."""
 
     _instance = None
+    _cache = {}
 
     def __new__(cls):
         if cls._instance is None:
@@ -107,13 +109,13 @@ class ConfigLoader:
                 self._get_param_with_fallback(
                     "/chatbot-juridico/chunk-size",
                     "CHUNK_SIZE",
-                    "800"
+                    "1200"
                 )),
             "CHUNK_OVERLAP": int(
                 self._get_param_with_fallback(
                     "/chatbot-juridico/chunk-overlap",
                     "CHUNK_OVERLAP",
-                    "150"
+                    "300"
                 )),
             "MAX_TOKENS": int(
                 self._get_param_with_fallback(
@@ -121,32 +123,74 @@ class ConfigLoader:
                     "MAX_TOKENS",
                     "8000"
                 )),
+            "PDF_PREFIX": self._get_param_with_fallback(
+                "/chatbot-juridico/pdf-prefix",
+                "PDF_PREFIX",
+                "juridicos/"
+            ),
             "LEGAL_SEPARATORS": self._get_param_with_fallback(
                 "/chatbot-juridico/legal-separators",
                 "LEGAL_SEPARATORS",
-                "\nArtigo ,\n§ ,\nParágrafo ,\nInciso ,\nAlínea ,\nCAPÍTULO ,\nSeção ,\n\n,\n, "
-            )
+                "\nArtigo,\n§,\nParágrafo,\nInciso,\nAlínea,\nCAPÍTULO,\nSeção,\n\n,\n, "
+            ),
+            "LEGAL_IGNORE_PATTERNS": self._get_param_with_fallback(
+                "/chatbot-juridico/legal-ignore-patterns",
+                "LEGAL_IGNORE_PATTERNS",
+                r"Documento assinado digitalmente,"
+                r"Fl\. \d+,"
+                r"Página \d+,"
+                r"Processo: \d+-\d+\.\d+\.\d+\.\d+\.\d+,"
+                r"https?://[^\s]+,"
+                r"Assinado\s(eletronicamente|digitalmente)\spor:.*?\d{2}/\d{2}/\d{4},"
+                r"N(ú|u)mero\sdo\sdocumento:.*?\d+,"
+                r"\(e-STJ\sFl\.\d+\),"
+                r"Num\.\s\d+\s-\sPág\.\s\d+,"
+                r"S\sE\sL\sA\sJ\sA\sZ\sU\sO\sS\sN\sR\sÁ\sK.*?(?=\n|$),"
+                r"i+f+i+.*?m+\d+,"
+                r"^\s*[\W\d]{1,3}\s*$"
+            ),
+            "LEGAL_PRESERVE_PATTERNS": self._get_param_with_fallback(
+                "/chatbot-juridico/legal-preserve-patterns",
+                "LEGAL_PRESERVE_PATTERNS",
+                r"Art\. \d+º.*?(?=\nArt\.|\n§|$),§ \d+º.*?(?=\n§|\nArt\.|$),VOTO:.*?(?=ACÓRDÃO:|$),RELATÓRIO:.*?(?=VOTO:|$),ACÓRDÃO:.*?(?=PROCESSO:|$)"
+            ),
+            "MIN_VALID_CHUNK_LINES": int(
+                self._get_param_with_fallback(
+                    "/chatbot-juridico/min-valid-chunk-lines",
+                    "MIN_VALID_CHUNK_LINES",
+                    "3"
+                ))
         }
 
     def _get_param_with_fallback(self, ssm_name: str, env_var: str, default: Any) -> Any:
         """Hierarquia de resolução: SSM > Env Var > Default"""
+
+        # Checa se o valor já está no cache
+        if ssm_name in self._cache:
+            return self._cache[ssm_name]
+
         # 1. Tentar SSM se disponível
         if AWS_AVAILABLE:
             try:
                 response = ssm_client.get_parameter(
                     Name=ssm_name, WithDecryption=True)
-                return response['Parameter']['Value']
+                value = response['Parameter']['Value']
+                # Armazena no cache
+                self._cache[ssm_name] = value
+                return value
             except ClientError:
                 pass
 
         # 2. Tentar Env Var
         env_value = os.getenv(env_var)
         if env_value is not None:
+            self._cache[ssm_name] = env_value  # Armazena no cache
             return env_value
 
         # 3. Usar default
         print(
             f"[CONFIG] Usando default para {env_var} (SSM não encontrado)")
+        self._cache[ssm_name] = default  # Armazena no cache
         return default
 
     def __getattr__(self, name: str) -> Any:
@@ -159,6 +203,30 @@ class ConfigLoader:
 
 class PDFConfig:
     """Configurações especializadas para processamento de PDF"""
+
+    def __init__(self):
+        # Cache interno para padrões compilados
+        self._compiled_ignore = None
+        self._compiled_preserve = None
+
+    @property
+    def LEGAL_IGNORE_PATTERNS(self) -> list[re.Pattern]:
+        """Padrões compilados (cacheados na primeira chamada)"""
+        if self._compiled_ignore is None:
+            patterns = [p.strip()
+                        for p in config.LEGAL_IGNORE_PATTERNS.split(',') if p.strip()]
+            self._compiled_ignore = [re.compile(
+                p, re.IGNORECASE) for p in patterns]
+        return self._compiled_ignore
+
+    @property
+    def LEGAL_PRESERVE_PATTERNS(self) -> list[re.Pattern]:
+        """Padrões compilados (cacheados na primeira chamada)"""
+        if self._compiled_preserve is None:
+            patterns = [
+                p.strip() for p in config.LEGAL_PRESERVE_PATTERNS.split(',') if p.strip()]
+            self._compiled_preserve = [re.compile(p) for p in patterns]
+        return self._compiled_preserve
 
     @property
     def CHUNK_SIZE(self) -> int:
@@ -190,9 +258,19 @@ class PDFConfig:
         return config.MAX_TOKENS  # Alinhado com limite do modelo
 
     @property
+    def PDF_PREFIX(self) -> str:
+        """str: Prefixo do caminho S3 para arquivos PDF."""
+        return config.PDF_PREFIX
+
+    @property
     def ACCEPTED_MIME_TYPES(self) -> set:
         """Tipos MIME aceitos para upload"""
         return {'application/pdf', 'application/x-pdf'}
+
+    @property
+    def MIN_VALID_CHUNK_LINES(self) -> int:
+        """Número mínimo de linhas válidas"""
+        return config.MIN_VALID_CHUNK_LINES
 
 
 class BedrockConfig:
@@ -236,7 +314,7 @@ class BedrockConfig:
         return config.BEDROCK_BATCH_DELAY
 
     @property
-    def TEXT_TRUNCATE(self) -> str:
+    def TEXT_TRUNCATE(self) -> int:
         """Define qual parte do texto será mantida quando exceder MAX_TOKENS."""
         return config.BEDROCK_TEXT_TRUNCATE
 
@@ -250,20 +328,24 @@ bedrock_config = BedrockConfig()
 
 if __name__ == "__main__":
     # Teste de configuração
-    print("\n===  🔒 Configurações Carregadas  🔒===")
-    print("Infraestrutura:")
+    print("\n===  🔒 Configurações Carregadas  🔒 ===")
+    print("\n=== 🌐 Infraestrutura === ")
     print(f"- S3 Bucket: {config.S3_BUCKET_NAME}")
     print(f"- Log Group: {config.LOG_GROUP}")
 
-    print("\nBedrock:")
+    print("\n=== 🪨  Bedrock === ")
     print(f"- Model ID: {bedrock_config.MODEL_ID}")
     print(f"- Batch Size: {bedrock_config.BATCH_SIZE}")
     print(f"- Max Retries: {bedrock_config.MAX_RETRIES}")
     print(f"- Batch Delay: {bedrock_config.BATCH_DELAY}s")
     print(f"- Text Truncate: {bedrock_config.TEXT_TRUNCATE} chars")
 
-    print("\nPDF Processing:")
+    print("\n=== ⚖️  Padrões Jurídicos Carregados === ")
     print(f"- Chunk Size: {pdf_config.CHUNK_SIZE}")
     print(f"- Chunk Overlap: {pdf_config.CHUNK_OVERLAP}")
     print(f"- Max Page Length: {pdf_config.MAX_PAGE_LENGTH}")
     print(f"- Legal Separators: {pdf_config.LEGAL_SEPARATORS}")
+    print("- Ignorar:", [p.pattern for p in pdf_config.LEGAL_IGNORE_PATTERNS])
+    print("- Preservar:",
+          [p.pattern for p in pdf_config.LEGAL_PRESERVE_PATTERNS])
+    print("- Linhas mínimas:", pdf_config.MIN_VALID_CHUNK_LINES)
