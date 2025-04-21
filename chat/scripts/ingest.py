@@ -10,6 +10,7 @@ from chat.core.vector_store import index_documents_in_chroma
 from chat.utils.aws_clients import s3_client
 from chat.utils.config import pdf_config
 from chat.utils.logger import get_logger
+from chat.utils.config import config
 
 logger = get_logger("ingest")
 
@@ -40,5 +41,5 @@ def ingest_pdfs(bucket_name: str):
         logger.error(f"🚨 Erro durante ingestão: {str(e)}")
 
 if __name__ == "__main__":
-    bucket_name = "chatbot-docs-rhafa-d42f93d6"
+    bucket_name = config.S3_BUCKET_NAME
     ingest_pdfs(bucket_name)
