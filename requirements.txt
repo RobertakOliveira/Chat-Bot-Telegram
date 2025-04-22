@@ -16,8 +16,6 @@ langchain-core==0.3.54
 # VectorStore (ChromaDB) e processamento de PDFs
 chromadb==1.0.3  # Para armazenamento de vetores
 pypdf==5.4.0 # Leitura de PDFs
-unstructured==0.17.2
-unstructured[pdf]
 
 # Telegram Bot
 python-telegram-bot==22.0
