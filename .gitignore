@@ -1,2 +1,7 @@
 */.*
 terraform/*.tfstate*
+*.pem
+terraform/dev.tfvars
+venv
+shared
+__pycache__
