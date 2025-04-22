@@ -11,10 +11,9 @@ langchain-aws==0.2.21  # Integração AWS Bedrock
 langchain==0.3.23
 langchain-community==0.3.21
 langchain-core==0.3.54
-#langchain-openai==0.3.12  # (Se usado em outros módulos)
 
 # VectorStore (ChromaDB) e processamento de PDFs
-chromadb==1.0.3  # Para armazenamento de vetores
+langchain-chroma == 0.2.3  # Para armazenamento de vetores
 pypdf==5.4.0 # Leitura de PDFs
 
 # Telegram Bot

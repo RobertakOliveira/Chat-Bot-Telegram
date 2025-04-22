@@ -88,14 +88,14 @@ infra/plan.out
 *.sublime-*
 .history/
 
-# Notebooks Jupyter
-.ipynb_checkpoints/
-*.ipynb
+# # Notebooks Jupyter
+# .ipynb_checkpoints/
+# *.ipynb
 
-# Docker
-**/.dockerignore
-**/Dockerfile
-**/docker-compose*.yml
+# # Docker
+# **/.dockerignore
+# **/Dockerfile
+# **/docker-compose*.yml
 
 # Cache e dados de ferramentas externas
 .amdxso/
