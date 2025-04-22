@@ -1,11 +1,3 @@
-variable "lambda1_invoke_arn" {
-  type = string
-}
-
-variable "lambda1_name" {
-  type = string
-}
-
 resource "aws_apigatewayv2_api" "lambda_api" {
   name          = "lambda-entry-api"
   protocol_type = "HTTP"
@@ -37,12 +29,4 @@ resource "aws_lambda_permission" "apigw_invoke" {
   function_name = var.lambda1_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.lambda_api.execution_arn}/*/POST/lambda-entry"
-}
-
-output "api_url" {
-  value = "${aws_apigatewayv2_api.lambda_api.api_endpoint}/lambda-entry"
-}
-
-output "execution_arn" {
-  value = aws_apigatewayv2_api.lambda_api.execution_arn
 }
