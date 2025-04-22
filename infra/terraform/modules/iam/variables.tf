@@ -22,11 +22,25 @@ variable "policy_json" {
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "S3ReadWrite",
+      "Effect": "Allow",
       "Action": [
         "s3:ListBucket",
-        "s3:GetObject"
+        "s3:GetObject",
+        "s3:PutObject"
       ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "BedrockAccess",
       "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:GetModel",
+        "bedrock:ListModels",
+        "bedrock:DescribeModel",
+        "bedrock:List*"
+      ],
       "Resource": "*"
     }
   ]
