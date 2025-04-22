@@ -10,6 +10,16 @@ module "iam" {
   source = "./modules/iam"
 }
 
+module "lambda_invoke" {
+  source            = "./modules/lambda_invoke"
+  lambda_config     = var.lambda_functions["lambda1"]
+  ecr_repo_url      = module.ecr.repository_url
+  exec_role_arn     = module.iam.lambda_exec_role_arn
+  step_function_arn = module.step_function.workflow_arn
+  aws_region        = var.aws_region 
+}
+
+
 module "lambda" {
   source             = "./modules/lambda"
   lambda_functions   = var.lambda_functions
@@ -19,9 +29,9 @@ module "lambda" {
 }
 
 module "apigateway" {
-  source            = "./modules/apigateway"
-  lambda1_invoke_arn = module.lambda.lambda1_invoke_arn
-  lambda1_name        = module.lambda.lambda1_function_name
+  source              = "./modules/apigateway"
+  lambda_invoke_arn   = module.lambda_invoke.invoke_arn
+  lambda_invoke_name  = module.lambda_invoke.function_name
 }
 
 module "step_function" {
