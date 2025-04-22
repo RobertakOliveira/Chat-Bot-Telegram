@@ -11,8 +11,13 @@ module "s3" {
   bucket_tag_name    = "grupo1ChatbotDocuments"
   project            = var.project
   cost_center        = var.cost_center
-  dataset_path       = "${path.module}/../dataset/juridicos"  # Verifique o caminho local
+
+  dataset_path       = "${path.root}/../../dataset/juridicos.zip"
+  # upload_zip         = true
 }
+
+
+
 
 module "ec2" {
   source            = "./modules/ec2"

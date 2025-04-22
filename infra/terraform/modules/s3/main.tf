@@ -33,11 +33,13 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "documento_bucket_
   }
 }
 
-resource "aws_s3_object" "juridico_folder" {
-  for_each = fileset(var.dataset_path, "**/*")
+# Upload único arquivo ZIP
+resource "aws_s3_object" "juridico_zip" {
+  count  = var.upload_zip ? 1 : 0  # Condicionalmente cria o objeto
 
   bucket = aws_s3_bucket.documento_bucket.id
-  key    = "juridicos/${each.value}"
-  source = "${var.dataset_path}/${each.value}"
-  etag   = filemd5("${var.dataset_path}/${each.value}")
+  key    = "juridicos.zip"
+  source = var.dataset_path
+  etag   = filemd5(var.dataset_path)
 }
+

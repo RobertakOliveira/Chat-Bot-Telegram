@@ -21,3 +21,6 @@ terraform/.terraform/providers
 
 # Arquivos de configuração SSH
 terraform/modules/ec2/ssh_dir
+infra/terraform/.terraform.tfstate.lock.info
+infra/terraform/modules/ec2/ssh_dir/chatbot_key
+infra/terraform/modules/ec2/ssh_dir/chatbot_key.pub

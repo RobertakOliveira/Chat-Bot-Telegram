@@ -20,5 +20,11 @@ variable "cost_center" {
 
 variable "dataset_path" {
   type        = string
-  description = "Caminho até a pasta 'juridicos' contendo os arquivos a serem enviados."
+  description = "Caminho completo até o arquivo ZIP a ser enviado ao bucket."
+}
+
+variable "upload_zip" {
+  type        = bool
+  description = "Indica se o upload do arquivo ZIP deve ser realizado."
+  default     = true
 }
