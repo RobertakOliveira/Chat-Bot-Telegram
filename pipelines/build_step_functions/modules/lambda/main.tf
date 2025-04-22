@@ -21,25 +21,8 @@ resource "null_resource" "build_and_push" {
   }
 }
 
-resource "aws_lambda_function" "lambda1" {
-  function_name = "lambda1"
-  role          = var.exec_role_arn
-  package_type  = "Image"
-  image_uri     = "${var.ecr_repo_url}:${var.lambda_functions["lambda1"].tag}"
-  memory_size   = 128
-  timeout       = 30
-
-  environment {
-    variables = {
-      STEP_FUNCTION_ARN = var.step_function_arn
-    }
-  }
-
-  depends_on = [null_resource.build_and_push]
-}
-
 resource "aws_lambda_function" "docker_lambda" {
-  for_each = { for k, v in var.lambda_functions : k => v if k != "lambda1" }
+  for_each = { for k, v in var.lambda_functions : k => v if k != "lambda_invoke" }
 
   function_name = each.key
   role          = var.exec_role_arn
