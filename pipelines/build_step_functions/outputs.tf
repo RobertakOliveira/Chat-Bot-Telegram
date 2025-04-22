@@ -3,10 +3,11 @@ output "api_gateway_url" {
   value       = module.apigateway.api_url
 }
 
-output "lambda1_invoke_arn" {
-  description = "ARN de invocação da Lambda 1"
-  value       = module.lambda.lambda1_invoke_arn
+output "lambda_invoke_arn" {
+  description = "ARN de invocação da Lambda Invoke"
+  value       = module.lambda_invoke.invoke_arn
 }
+
 
 output "step_function_arn" {
   description = "ARN da Step Function que orquestra as 4 Lambdas"
