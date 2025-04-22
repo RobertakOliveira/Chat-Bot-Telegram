@@ -1,0 +1,14 @@
+services:
+  chatbotapi_proxy:
+    build:
+      dockerfile: ./dockerfiles/nginx/dockerfile
+      context: .
+    volumes:
+      - ./shared/:/shared/
+    restart: always
+    ports:
+      - 80:80
+    networks:
+      - chatbotnetwork
+networks:
+  chatbotnetwork:
