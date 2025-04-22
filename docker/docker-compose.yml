@@ -1,0 +1,20 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: uvicorn app.api:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../.env
+
+  bot:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: python app/bot.py
+    env_file:
+      - ../.env
+    depends_on:
+      - api
