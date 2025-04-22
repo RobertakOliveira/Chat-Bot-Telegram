@@ -18,3 +18,6 @@ terraform/.terraform/providers
 
 # Arquivo de configuração
 .env
+
+# Arquivos de configuração SSH
+terraform/modules/ec2/ssh_dir
