@@ -1,3 +1,4 @@
+# VPC
 module "vpc" {
   source = "./modules/vpc"
   
@@ -5,6 +6,7 @@ module "vpc" {
   vpc_name   = "${var.project}-vpc"
 }
 
+# S3
 module "s3" {
   source             = "./modules/s3"
   bucket_name_prefix = "grupo1-chatbot-documentos"
@@ -13,12 +15,9 @@ module "s3" {
   cost_center        = var.cost_center
 
   dataset_path       = "${path.root}/../../dataset/juridicos.zip"
-  # upload_zip         = true
 }
 
-
-
-
+# EC2
 module "ec2" {
   source            = "./modules/ec2"
   ami               = "ami-07a6f770277670015"
@@ -27,7 +26,7 @@ module "ec2" {
   security_group_id = module.vpc.default_security_group_id
 }
 
-
+# CloudWatch
 module "cloudwatch" {
   source = "./modules/cloudwatch"
   
@@ -35,6 +34,7 @@ module "cloudwatch" {
   retention_in_days = 7
 }
 
+# API Gateway
 module "api_gateway" {
   source          = "./modules/api_gateway"
   api_name        = "Grupo1ChatbotAPI"
@@ -43,6 +43,7 @@ module "api_gateway" {
   stage_name      = "prod"
 }
 
+# IAM Role e Policy
 module "iam" {
   source      = "./modules/iam"
   role_name   = "Grupo1ChatbotRole"

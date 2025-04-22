@@ -35,7 +35,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "documento_bucket_
 
 # Upload único arquivo ZIP
 resource "aws_s3_object" "juridico_zip" {
-  count  = var.upload_zip ? 1 : 0  # Condicionalmente cria o objeto
+  count  = var.upload_zip ? 1 : 0  
 
   bucket = aws_s3_bucket.documento_bucket.id
   key    = "juridicos.zip"
