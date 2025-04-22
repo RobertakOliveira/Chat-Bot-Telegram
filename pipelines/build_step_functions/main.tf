@@ -232,3 +232,7 @@ resource "aws_iam_role_policy_attachment" "lambda1_exec_step_attach" {
 
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
+
+output "api_gateway_url" {
+  value = "${aws_apigatewayv2_api.lambda_api.api_endpoint}/lambda-entry"
+}
