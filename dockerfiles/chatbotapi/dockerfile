@@ -1,0 +1,12 @@
+FROM ubuntu:latest
+
+RUN apt-get update -y
+RUN apt-get upgrade -y
+RUN apt-get -y install python3-pip 
+RUN apt-get install python3-flask -y
+RUN apt-get install gunicorn3 -y
+
+# Running
+
+EXPOSE 3000
+CMD ["gunicorn", "--workers=2", "--chdir=/api/", "main:app", "-b", "unix:/shared/chatbotsocket.sock"]

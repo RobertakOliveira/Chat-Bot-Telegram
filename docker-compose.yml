@@ -10,5 +10,18 @@ services:
       - 80:80
     networks:
       - chatbotnetwork
+    depends_on:
+      - chatbotapi
+  chatbotapi:
+    build:
+      dockerfile: ./dockerfiles/chatbotapi/dockerfile
+      context: .
+    volumes:
+      - ./src/:/api/
+      - ./shared/:/shared/
+    ports:
+      - 3000:3000
+    networks:
+      - chatbotnetwork
 networks:
   chatbotnetwork:
