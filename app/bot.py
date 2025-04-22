@@ -2,7 +2,7 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 import aiohttp
-from config import TELEGRAM_BOT_TOKEN, API_SECRET_KEY, API_URL
+from app.config import API_SECRET_KEY, TELEGRAM_BOT_TOKEN, API_URL
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("👋 Olá! Envie sua dúvida jurídica.")
