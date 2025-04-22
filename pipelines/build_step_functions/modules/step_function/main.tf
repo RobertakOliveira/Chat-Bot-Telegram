@@ -1,11 +1,3 @@
-variable "role_arn" {
-  type = string
-}
-
-variable "lambda_arns" {
-  type = map(string)
-}
-
 resource "aws_sfn_state_machine" "workflow" {
   name     = "lambda-docker-workflow"
   role_arn = var.role_arn
@@ -30,8 +22,4 @@ resource "aws_sfn_state_machine" "workflow" {
       }
     }
   })
-}
-
-output "workflow_arn" {
-  value = aws_sfn_state_machine.workflow.arn
 }
