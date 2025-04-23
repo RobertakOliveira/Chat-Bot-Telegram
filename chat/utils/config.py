@@ -20,6 +20,9 @@ import os
 import re
 from typing import Any
 from botocore.exceptions import ClientError, NoCredentialsError
+from chat.utils.logger import get_logger
+
+logger = get_logger("config")
 
 try:
     from chat.utils.aws_clients import ssm_client
@@ -52,7 +55,7 @@ class ConfigLoader:
             "LOG_GROUP": self._get_param_with_fallback(
                 "/chatbot-juridico/log-group",
                 "LOG_GROUP",
-                "/aws/legal-bot/embeddings"
+                "/aws/chatbot-consultor-juridico"
             ),
 
             # Configurações do Bedrock
@@ -188,7 +191,7 @@ class ConfigLoader:
             return env_value
 
         # 3. Usar default
-        print(
+        logger.info(
             f"[CONFIG] Usando default para {env_var} (SSM não encontrado)")
         self._cache[ssm_name] = default  # Armazena no cache
         return default
@@ -328,24 +331,29 @@ bedrock_config = BedrockConfig()
 
 if __name__ == "__main__":
     # Teste de configuração
-    print("\n===  🔒 Configurações Carregadas  🔒 ===")
-    print("\n=== 🌐 Infraestrutura === ")
-    print(f"- S3 Bucket: {config.S3_BUCKET_NAME}")
-    print(f"- Log Group: {config.LOG_GROUP}")
+    logger.info("\n===  🔒 Configurações Carregadas  🔒 ===")
+    logger.info("\n=== 🌐 Infraestrutura === ")
+    logger.info(f"- S3 Bucket: {config.S3_BUCKET_NAME}")
+    logger.info(f"- Log Group: {config.LOG_GROUP}")
 
-    print("\n=== 🪨  Bedrock === ")
-    print(f"- Model ID: {bedrock_config.MODEL_ID}")
-    print(f"- Batch Size: {bedrock_config.BATCH_SIZE}")
-    print(f"- Max Retries: {bedrock_config.MAX_RETRIES}")
-    print(f"- Batch Delay: {bedrock_config.BATCH_DELAY}s")
-    print(f"- Text Truncate: {bedrock_config.TEXT_TRUNCATE} chars")
+    logger.info("\n=== 🪨  Bedrock === ")
+    logger.info(f"- Model ID: {bedrock_config.MODEL_ID}")
+    logger.info(f"- Batch Size: {bedrock_config.BATCH_SIZE}")
+    logger.info(f"- Max Retries: {bedrock_config.MAX_RETRIES}")
+    logger.info(f"- Batch Delay: {bedrock_config.BATCH_DELAY}s")
+    logger.info(f"- Text Truncate: {bedrock_config.TEXT_TRUNCATE} chars")
 
-    print("\n=== ⚖️  Padrões Jurídicos Carregados === ")
-    print(f"- Chunk Size: {pdf_config.CHUNK_SIZE}")
-    print(f"- Chunk Overlap: {pdf_config.CHUNK_OVERLAP}")
-    print(f"- Max Page Length: {pdf_config.MAX_PAGE_LENGTH}")
-    print(f"- Legal Separators: {pdf_config.LEGAL_SEPARATORS}")
-    print("- Ignorar:", [p.pattern for p in pdf_config.LEGAL_IGNORE_PATTERNS])
-    print("- Preservar:",
-          [p.pattern for p in pdf_config.LEGAL_PRESERVE_PATTERNS])
-    print("- Linhas mínimas:", pdf_config.MIN_VALID_CHUNK_LINES)
+    logger.info("\n=== ⚖️  Padrões Jurídicos Carregados === ")
+    logger.info(f"- Chunk Size: {pdf_config.CHUNK_SIZE}")
+    logger.info(f"- Chunk Overlap: {pdf_config.CHUNK_OVERLAP}")
+    logger.info(f"- Max Page Length: {pdf_config.MAX_PAGE_LENGTH}")
+    logger.info(f"- Legal Separators: {pdf_config.LEGAL_SEPARATORS}")
+    logger.info(
+        f"- Ignorar: {[p.pattern for p in pdf_config.LEGAL_IGNORE_PATTERNS]}"
+    )
+    logger.info(
+        f"- Preservar: {[p.pattern for p in pdf_config.LEGAL_PRESERVE_PATTERNS]}"
+    )
+    logger.info(
+        f"- Linhas mínimas: {pdf_config.MIN_VALID_CHUNK_LINES}"
+    )

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
-from config import API_SECRET_KEY, TELEGRAM_BOT_TOKEN
+from app.config import API_SECRET_KEY, TELEGRAM_BOT_TOKEN
 from dotenv import load_dotenv
 from fastapi.security import APIKeyHeader
 from typing import Optional

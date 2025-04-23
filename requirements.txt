@@ -1,6 +1,15 @@
+# Utilitários
+python-dotenv==1.1.0  # Variáveis de ambiente
+psutil==7.0.0  # Monitoramento de sistema
+tenacity==9.1.2  # Retry para chamadas de API
+httpx==0.28.1  # Cliente HTTP assíncrono
+
 # Framework web e servidor ASGI
 fastapi==0.115.9  # Framework para construir APIs compatível com chromadb
 uvicorn==0.34.1  # Servidor para rodar o FastAPI
+
+# Telegram Bot
+python-telegram-bot==22.0
 
 # AWS SDK e serviços
 boto3==1.37.36
@@ -11,22 +20,10 @@ langchain-aws==0.2.21  # Integração AWS Bedrock
 langchain==0.3.23
 langchain-community==0.3.21
 langchain-core==0.3.54
-#langchain-openai==0.3.12  # (Se usado em outros módulos)
 
 # VectorStore (ChromaDB) e processamento de PDFs
-chromadb==1.0.3  # Para armazenamento de vetores
+langchain-chroma == 0.2.3  # Para armazenamento de vetores
 pypdf==5.4.0 # Leitura de PDFs
-unstructured==0.17.2
-unstructured[pdf]
-
-# Telegram Bot
-python-telegram-bot==22.0
-
-# Utilitários
-python-dotenv==1.1.0  # Variáveis de ambiente
-psutil==7.0.0  # Monitoramento de sistema
-tenacity==9.1.2  # Retry para chamadas de API
-httpx==0.28.1  # Cliente HTTP assíncrono
 
 # Validação de dados
 pydantic==2.11.3  # Validação de modelos

@@ -1,13 +1,3 @@
-# Avaliação das Sprints 7 e 8 - Programa de Bolsas Compass UOL / AWS - turma janeiro/2025
-
-Avaliação das sétima e oitava sprints do programa de bolsas Compass UOL para formação em Inteligência Artificial para AWS.
-
-***
-
-## Execução (Código Fonte)
-
-Faça um chatbot para consulta de documentos jurídicos. Para tanto, devem ser carregados os documentos indicados e montada uma base em bucket S3. Esta base deve constituir o RAG (Retrieval Augmented Generation) a ser utilizado com o Bedrock. O mecanismo do chatbot deve ser provido pelo LangChain com Chroma e a interface pelo Telegram. O Cloudwatch deve ser utilizado para gravação de log dos dados processados.
-
 **Especificações**:
 
 1. Criar um chatbot com [LangChain](https://www.langchain.com/) fazendo a carga a partir de um S3 contendo dos documentos disponibilizados na pasta [dataset](<./dataset>).
@@ -21,9 +11,6 @@ Faça um chatbot para consulta de documentos jurídicos. Para tanto, devem ser c
   * [How to Build a Locally Hosted Chatbot w/ Bedrock and More!](https://www.serverlessguru.com/blog/how-to-build-a-locally-hosted-chatbot-with-amazon-bedrock-langchain-and-streamlit)
   * [How to Build High-Accuracy Serverless RAG Using Amazon Bedrock and Kendra on AWS](https://medium.com/@zekaouinoureddine/how-to-build-high-accuracy-serverless-rag-using-amazon-bedrock-and-kendra-on-aws-9ec9681e4e9b)
 
-
-* Dica 1: usar o [PyPDFLoader](https://python.langchain.com/docs/how_to/document_loader_pdf/) do LangChain.
-* Dica 2: para expor no Telegram olhar o artigo [How to Build a Telegram Bot in 5 Simple Steps](https://dev.to/catheryn/how-to-build-a-telegram-bot-in-5-simple-steps-4964)
 
 ### Arquitetura Básica
 
@@ -52,10 +39,7 @@ Faça um chatbot para consulta de documentos jurídicos. Para tanto, devem ser c
 ***
 
 ## Entrega
-
-* **O trabalho deve ser feito em grupos de três ou quatro pessoas**;
-  * **Não devem ocorrer repetições das equipes constituídas na sprint anterior**;
-* Criar uma branch no repositório com o formato grupo-número (exemplo: grupo-1);
+Submeter o projeto conforme as diretrizes estabelecidas:
 * Subir o trabalho na branch da equipe com um README.md:
   * documentar detalhes sobre como a avaliação foi desenvolvida;
   * relatar dificuldades conhecidas;
@@ -65,14 +49,3 @@ Faça um chatbot para consulta de documentos jurídicos. Para tanto, devem ser c
 * O prazo de entrega é até às 14h do dia 12/05/2025 no repositório do github (<https://github.com/Compass-pb-aws-2025-JANEIRO/sprints-7-8-pb-aws-janeiro>).
 
 *** 
-
-## Apresentação
-
-* A coordenação do programa de bolsas irá agendar a apresentação das equipes.
-* Cada equipe terá 15 minutos para apresentar seu readme, código e demonstração do funcionamento da aplicação.
-* Na apresentação haverá ao menos uma pessoa da equipe do Programa de Bolsas para acompanhamento.
-* A apresentação será gravada para que os instrutores possam avaliar posteriormente.
-* Após assistir a gravação da apresentação haverão instrutores que darão o feedback técnico.
-* Após todas as apresentações a coordenação também fornecerá o feedback comportamental.
-
-***
