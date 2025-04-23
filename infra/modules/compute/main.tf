@@ -2,7 +2,6 @@
 data "aws_ami" "ubuntu" {
   most_recent = true
 
-  # Filtro para selecionar a AMI do Ubuntu 22.04 com virtualização HVM.
   filter {
     name   = "name"
     values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
@@ -13,7 +12,6 @@ data "aws_ami" "ubuntu" {
     values = ["hvm"]
   }
 
-  # ID da conta AWS da Canonical (imagens oficiais do Ubuntu).
   owners = ["099720109477"]
 }
 
@@ -23,16 +21,6 @@ resource "aws_security_group" "chatbot_sg" {
   description = "Chatbot Security Group"
   vpc_id      = var.vpc_id
 
-  # Permitir acesso SSH de qualquer lugar.
-  ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Permitir acesso à API na porta 5000.
   ingress {
     description = "API"
     from_port   = 5000
@@ -41,7 +29,6 @@ resource "aws_security_group" "chatbot_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Permitir acesso HTTP na porta 80.
   ingress {
     description = "HTTP"
     from_port   = 80
@@ -50,7 +37,6 @@ resource "aws_security_group" "chatbot_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Permitir todo o tráfego de saída.
   egress {
     from_port   = 0
     to_port     = 0
@@ -60,10 +46,9 @@ resource "aws_security_group" "chatbot_sg" {
 }
 
 # IAM Role para a instância EC2 do Chatbot.
-resource "aws_iam_role" "chatbot_role" {      
+resource "aws_iam_role" "chatbot_role" {
   name = "chatbot-role-${var.environment}"
 
-  # Política para permitir que a instância EC2 assuma o papel.
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -79,6 +64,17 @@ resource "aws_iam_role" "chatbot_role" {
       Name = "Chatbot-Role-${var.environment}"
     }
   )
+}
+
+# Permissões SSM
+resource "aws_iam_role_policy_attachment" "ssm_managed_instance" {
+  role       = aws_iam_role.chatbot_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_role_policy_attachment" "ssm_directory_access" {
+  role       = aws_iam_role.chatbot_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMDirectoryServiceAccess"
 }
 
 # Política IAM associada ao papel do Chatbot.
@@ -98,7 +94,7 @@ resource "aws_iam_role_policy" "chatbot_policy" {
         Action   = ["s3:*"],
         Effect   = "Allow",
         Resource = [
-          "arn:aws:s3:::chatbot-docs-${var.owner_tag}-*",     
+          "arn:aws:s3:::chatbot-docs-${var.owner_tag}-*",
           "arn:aws:s3:::chatbot-docs-${var.owner_tag}-*/*"
         ]
       },
@@ -124,33 +120,19 @@ resource "aws_iam_role_policy" "chatbot_policy" {
   })
 }
 
-# Perfil de instância IAM para associar o papel à instância EC2.
+# Perfil de instância IAM
 resource "aws_iam_instance_profile" "chatbot_profile" {
   name = "chatbot-profile-${var.environment}"
   role = aws_iam_role.chatbot_role.name
 }
 
-# Par de chaves para acesso SSH à instância EC2.
-resource "aws_key_pair" "chatbot_key" {
-  key_name   = "chatbot-key-${var.environment}"
-  public_key = file("C:/Users/katys/.ssh/terraform_chatbot_key.pub")
-
-  tags = merge(
-    var.common_tags,
-    {
-      Name = "Chatbot-KeyPair-${var.environment}"
-    }
-  )
-}
-
-# Instância EC2 para o Chatbot.
+# Instância EC2 para o Chatbot (sem SSH, com SSM)
 resource "aws_instance" "chatbot_server" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   subnet_id              = var.subnet_id
   vpc_security_group_ids = [aws_security_group.chatbot_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.chatbot_profile.name
-  key_name               = aws_key_pair.chatbot_key.key_name
   user_data              = filebase64("${path.module}/bootstrap.sh")
 
   tags = {
@@ -174,7 +156,7 @@ resource "aws_instance" "chatbot_server" {
   }
 }
 
-# Alarme do CloudWatch para monitorar alta utilização de CPU.
+# Alarme do CloudWatch para uso de CPU
 resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   alarm_name          = "chatbot-cpu-high-${var.environment}"
   comparison_operator = "GreaterThanOrEqualToThreshold"
@@ -197,7 +179,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   )
 }
 
-# Dashboard do CloudWatch para monitorar métricas da instância EC2.
+# Dashboard do CloudWatch
 resource "aws_cloudwatch_dashboard" "chatbot_dashboard" {
   dashboard_name = "chatbot-dashboard-${var.environment}"
 
