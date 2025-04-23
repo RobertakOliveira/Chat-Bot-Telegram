@@ -34,6 +34,7 @@ pip-wheel-metadata/
 venv/
 env/
 venv.bak/
+<<<<<<< Updated upstream
 
 # Ferramentas de análise
 .mypy_cache/
@@ -76,6 +77,45 @@ terraform.tfvars
 infra/plan.out
 
 
+=======
+
+# Ferramentas de análise
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+report.html
+resultados_test.txt
+*.prof
+*.cache
+
+######################################################################
+#                             AWS & CLOUD                             #
+######################################################################
+# Credenciais e configurações
+**/.aws/
+**/credentials
+**/config
+**/*.secret
+**/*.key
+**/parameters.yml
+
+# Ferramentas AWS
+**/amplify/
+**/sam-build/
+**/cdk.out/
+**/.cdk.staging/
+**/cloudformation-template*.json
+
+# Terraform
+.terraform/
+**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.tfvars.json
+
+>>>>>>> Stashed changes
 ######################################################################
 #                         FERRAMENTAS DE DEV                          #
 ######################################################################
@@ -113,7 +153,10 @@ cache/lm-studio/
 *.sqlite3
 *.env
 .env*.local
+<<<<<<< Updated upstream
 .env_bootstrap
+=======
+>>>>>>> Stashed changes
 
 ######################################################################
 #                           SISTEMA OPERACIONAL                       #
