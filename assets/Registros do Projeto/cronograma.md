@@ -47,7 +47,7 @@ Este projeto visa desenvolver um chatbot jurídico inteligente capaz de consulta
 | **RAFA** | Implementação da Lógica RAG, Integração com ChromaDB, Configuração do CloudWatch     | LangChain, ChromaDB, AWS      |
 | **LEON** | Criação e Integração do Bot Telegram, Documentação do Projeto                      | Telegram Bot API, Markdown    |
 
-## 📂 Estrutura de Arquivos do Projeto
+## 📂 Estrutura de Arquivos do Projeto//
 
 
 ```bash
