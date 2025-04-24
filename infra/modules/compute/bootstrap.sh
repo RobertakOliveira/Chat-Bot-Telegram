@@ -6,7 +6,7 @@
 # ==============================================
 
 # Configurações
-APP_DIR="/opt/chatbot"
+APP_DIR="/opt/chatbot/docker"
 LOG_FILE="/var/log/chatbot-setup.log"
 
 # Função de log
@@ -14,61 +14,95 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1: $2" | tee -a "$LOG_FILE"
 }
 
-# 1. Instalar Docker
-log "INFO" "Instalando Docker..."
-apt-get update -y
-apt-get install -y \
-    apt-transport-https \
-    ca-certificates \
-    curl \
-    gnupg-agent \
-    software-properties-common
+# 1. Remover Docker antigo (se existir)
+log "INFO" "Removendo versões antigas do Docker..."
+apt remove --purge -y docker.io containerd || true
+apt autoremove -y
 
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-add-apt-repository \
-   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-   $(lsb_release -cs) \
-   stable"
+# 2. Instalar Docker oficial
+log "INFO" "Instalando Docker oficial..."
+apt update -y
+apt install -y ca-certificates curl gnupg lsb-release
 
-apt-get update -y
-apt-get install -y docker-ce docker-ce-cli containerd.io
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+chmod a+r /etc/apt/keyrings/docker.gpg
 
-# 2. Instalar Docker Compose
-log "INFO" "Instalando Docker Compose..."
-curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
+  tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+apt update -y
+apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+log "INFO" "Ativando Docker..."
+usermod -aG docker $USER
+newgrp docker
+systemctl enable docker
+systemctl start docker
 
 # 3. Criar estrutura de diretórios
-log "INFO" "Criando estrutura de diretórios..."
+log "INFO" "Criando estrutura do projeto em $APP_DIR..."
 mkdir -p "$APP_DIR/data/chroma_db"
 mkdir -p "$APP_DIR/logs"
+cd "$APP_DIR"
 
-# 4. Clonar repositório (se necessário)
-if [ ! -d "$APP_DIR/.git" ]; then
-    log "INFO" "Clonando repositório..."
-    git clone https://github.com/Compass-pb-aws-2025-JANEIRO/sprints-7-8-pb-aws-janeiro.git "$APP_DIR"
-fi
+# 4. Gerar arquivos do projeto
+log "INFO" "Gerando arquivos padrão..."
 
-# 5. Configurar .env
+# Dockerfile
+cat <<EOF > Dockerfile
+FROM python:3.9-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+EOF
+
+# requirements.txt
+cat <<EOF > requirements.txt
+uvicorn
+fastapi
+EOF
+
+# docker-compose.yml
+cat <<EOF > docker-compose.yml
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+EOF
+
+# main.py
+cat <<EOF > main.py
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello World"}
+EOF
+
+# 5. Criar arquivo .env
 log "INFO" "Configurando variáveis de ambiente..."
 cat <<EOF > "$APP_DIR/.env"
-# Configurações da API
 API_HOST=0.0.0.0
 API_PORT=8000
 API_SECRET_KEY=$(openssl rand -hex 32)
-
-# Configurações do Telegram
 TELEGRAM_BOT_TOKEN=""
-
-# Configurações AWS
 AWS_REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
-
-# Configurações ChromaDB
 CHROMA_PERSIST_DIRECTORY=/app/data/chroma_db
 EOF
 
-# 6. Iniciar serviços com Docker Compose
-log "INFO" "Iniciando serviços com Docker Compose..."
-cd "$APP_DIR/docker" && docker-compose up -d
+# 6. Subir com Docker Compose
+log "INFO" "Subindo aplicação com Docker Compose..."
+docker-compose up -d --build
 
-log "INFO" "Provisionamento concluído com sucesso!"
+log "✅ PROVISIONAMENTO CONCLUÍDO!"
+echo "Acesse via: http://<SEU_IP>:8000"
