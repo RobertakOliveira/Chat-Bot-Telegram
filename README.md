@@ -62,7 +62,7 @@ Faça um chatbot para consulta de documentos jurídicos. Para tanto, devem ser c
   * descrever como utilizar o sistema;
   * fornecer a URL para acesso ao chatbot;
 * 🔨 Disponibilizar o código fonte desenvolvido (observar estruturas de pastas);
-* O prazo de entrega é até às 14h do dia 12/05/2025 no repositório do github (<https://github.com/Compass-pb-aws-2025-JANEIRO/sprints-7-8-pb-aws-janeiro>).
+* O prazo de entrega é até às 14h do dia 05/05/2025 no repositório do github (<https://github.com/Compass-pb-aws-2025-JANEIRO/sprints-7-8-pb-aws-janeiro>).
 
 *** 
 
