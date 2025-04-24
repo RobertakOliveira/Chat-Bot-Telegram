@@ -1,6 +1,7 @@
 # main.py
 
 import os
+import boto3
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
@@ -9,6 +10,20 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.prompts import ChatPromptTemplate
 from langchain_aws import ChatBedrockConverse
 from classe_embedding import BedrockEmbeddings
+
+def sync_s3_folder(bucket_name: str, prefix: str, local_dir: str):
+    s3 = boto3.client("s3")
+    paginator = s3.get_paginator("list_objects_v2")
+    for page in paginator.paginate(Bucket=bucket_name, Prefix=prefix):
+        for obj in page.get("Contents", []):
+            key = obj["Key"]
+            if key.endswith("/"):
+                continue
+            rel_path = key[len(prefix):]
+            local_path = os.path.join(local_dir, rel_path)
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            s3.download_file(bucket_name, key, local_path)
+    print(f"✅ Sincronizado s3://{bucket_name}/{prefix} → {local_dir}/")
 
 def main():
     # 3. Criação ou carregamento do índice Chroma com embeddings do Bedrock
