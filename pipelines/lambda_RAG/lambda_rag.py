@@ -11,31 +11,13 @@ from langchain_aws import ChatBedrockConverse
 from classe_embedding import BedrockEmbeddings
 
 def main():
-    # 1. Carregamento dos PDFs jurídicos
-    dataset_path = "./dataset"
-    loader = DirectoryLoader(dataset_path, glob="**/*.pdf", loader_cls=PyPDFLoader)
-    documents = loader.load()
-    print(f"{len(documents)} documentos carregados.")
-
-    if not documents:
-        print("Nenhum documento encontrado. Verifique o caminho do dataset!")
-        return
-
-    # 2. Divisão dos textos em chunks
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=200)
-    docs = text_splitter.split_documents(documents)
-    print(f"{len(docs)} chunks gerados.")
-
     # 3. Criação ou carregamento do índice Chroma com embeddings do Bedrock
     embeddings = BedrockEmbeddings()
     persist_directory = "chroma_db"
     if os.path.exists(persist_directory) and os.listdir(persist_directory):
         print("Carregando índice já existente...")
         vectorstore = Chroma(persist_directory=persist_directory, embedding_function=embeddings)
-    else:
-        print("Criando novo índice e persistindo os dados...")
-        vectorstore = Chroma.from_documents(docs, embeddings, persist_directory=persist_directory)
-    print("Indexação concluída.")
+
 
 
     # 5. Instanciação do modelo conversacional Bedrock
