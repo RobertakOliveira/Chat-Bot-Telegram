@@ -26,6 +26,11 @@ def sync_s3_folder(bucket_name: str, prefix: str, local_dir: str):
     print(f"✅ Sincronizado s3://{bucket_name}/{prefix} → {local_dir}/")
 
 def main():
+     # 1. Define bucket e pasta local
+    bucket_name = "bucketembeddingssprint7"
+    prefix = "chroma_db/"
+    persist_directory = "chroma_db"
+
     # 3. Criação ou carregamento do índice Chroma com embeddings do Bedrock
     embeddings = BedrockEmbeddings()
     persist_directory = "chroma_db"
