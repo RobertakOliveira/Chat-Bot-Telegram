@@ -1,4 +1,3 @@
-# bot/bot.py
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 import aiohttp
@@ -28,10 +27,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             async with session.post(API_URL, json=payload, headers=headers) as response:
                 if response.status == 200:
-                    # Se quiser exibir também a resposta no bot, descomente abaixo
-                    # data = await response.json()
-                    # await update.message.reply_text(data["answer"])
-                    pass
+                    data = await response.json()
+                    await update.message.reply_text(data["answer"])
                 else:
                     await update.message.reply_text("Erro ao processar a pergunta.")
         except Exception as e:
@@ -51,11 +48,6 @@ def run_bot():
     # Handlers
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
-
-    # ⛔ Captura tudo que NÃO for texto
     app.add_handler(MessageHandler(~filters.TEXT, handle_media_error))
 
     app.run_polling()
-
-if __name__ == "__main__":
-    run_bot()

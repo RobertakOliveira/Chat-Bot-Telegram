@@ -153,6 +153,7 @@ cache/lm-studio/
 *.sqlite3
 *.env
 .env*.local
+
 <<<<<<< Updated upstream
 .env_bootstrap
 =======
