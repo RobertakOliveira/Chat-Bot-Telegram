@@ -26,8 +26,6 @@ RUN apt-get update && apt-get install -y \
 # Copia os requirements primeiro para aproveitar cache
 COPY requirements.txt .
 
-ENV PYTHONPATH=/app
-
 # Instala dependências Python
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -37,9 +35,13 @@ COPY . .
 # Cria diretório para o ChromaDB
 RUN mkdir -p /app/data/chroma_db
 
+# Define pasta app como raiz para garantir que o Python saiba onde procurar os pacotes/modules do seu projeto.
+ENV PYTHONPATH=/app
+
 # Define variáveis de ambiente padrão
 ENV CHROMA_PERSIST_DIRECTORY=/app/data/chroma_db
 ENV AWS_REGION=us-east-1
+ENV API_URL=http://api:8000/ask
 
 # Porta padrão para a API
 EXPOSE 8000
