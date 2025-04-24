@@ -21,7 +21,6 @@ Faça um chatbot para consulta de documentos jurídicos. Para tanto, devem ser c
   * [How to Build a Locally Hosted Chatbot w/ Bedrock and More!](https://www.serverlessguru.com/blog/how-to-build-a-locally-hosted-chatbot-with-amazon-bedrock-langchain-and-streamlit)
   * [How to Build High-Accuracy Serverless RAG Using Amazon Bedrock and Kendra on AWS](https://medium.com/@zekaouinoureddine/how-to-build-high-accuracy-serverless-rag-using-amazon-bedrock-and-kendra-on-aws-9ec9681e4e9b)
 
-
 * Dica 1: usar o [PyPDFLoader](https://python.langchain.com/docs/how_to/document_loader_pdf/) do LangChain.
 * Dica 2: para expor no Telegram olhar o artigo [How to Build a Telegram Bot in 5 Simple Steps](https://dev.to/catheryn/how-to-build-a-telegram-bot-in-5-simple-steps-4964)
 
@@ -64,7 +63,7 @@ Faça um chatbot para consulta de documentos jurídicos. Para tanto, devem ser c
 * 🔨 Disponibilizar o código fonte desenvolvido (observar estruturas de pastas);
 * O prazo de entrega é até às 14h do dia 12/05/2025 no repositório do github (<https://github.com/Compass-pb-aws-2025-JANEIRO/sprints-7-8-pb-aws-janeiro>).
 
-*** 
+***
 
 ## Apresentação
 
