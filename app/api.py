@@ -103,11 +103,11 @@ async def telegram_send_message(chat_id: str, text: str):
         raise HTTPException(status_code=500, detail=f"Telegram API error: {str(e)}")
 
 # --- Bot em thread paralela ---
-def start_bot():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    run_bot()
+#def start_bot():
+   # loop = asyncio.new_event_loop()
+    # asyncio.set_event_loop(loop)
+    # run_bot()
 
-@app.on_event("startup")
-def on_startup():
-    threading.Thread(target=start_bot, daemon=True).start()
+#@app.on_event("startup")
+#def on_startup():
+   # threading.Thread(target=start_bot, daemon=True).start()
