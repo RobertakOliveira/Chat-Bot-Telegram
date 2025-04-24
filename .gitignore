@@ -3,5 +3,10 @@ terraform/*.tfstate*
 *.pem
 terraform/dev.tfvars
 venv
+.venv
 shared
 __pycache__
+.env
+bd/*
+*.egg-info
+build/*
