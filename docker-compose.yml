@@ -17,7 +17,7 @@ services:
       dockerfile: ./dockerfiles/chatbotapi/dockerfile
       context: .
     volumes:
-      - ./src/:/api/
+      - ./src/:/src/
       - ./shared/:/shared/
     ports:
       - 3000:3000
