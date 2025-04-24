@@ -1,6 +1,7 @@
 import os
 import json
 import boto3
+import chromadb
 from langchain_core.documents import Document
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import FakeEmbeddings
@@ -45,7 +46,7 @@ def carregar_dados(arquivos):
                 print(f"📏 Dimensão do embedding: {len(emb)}")
 
     print(f"📊 Total de embeddings válidos: {len(embeddings)}")
-    return documentos, embeddings
+    return documentos, embeddings, tamanho_esperado
 
 # Embedding fake para indexação manual
 class StaticEmbeddings(FakeEmbeddings):
@@ -56,21 +57,39 @@ class StaticEmbeddings(FakeEmbeddings):
     def embed_documents(self, texts):
         return self._static_embeddings
 
+# Detecta a dimensão da coleção existente
+def obter_dimensao_colecao_existente(nome_colecao, persist_directory):
+    client = chromadb.PersistentClient(path=persist_directory)
+    try:
+        colecao = client.get_collection(name=nome_colecao)
+        return colecao.metadata.get("embedding_dim")
+    except Exception:
+        return None
+
 # Indexa no Chroma
-def indexar_embeddings(documentos, embeddings):
+def indexar_embeddings(documentos, embeddings, tamanho_embedding):
     print("📦 Indexando embeddings no Chroma...")
     modelo_falso = StaticEmbeddings(embeddings)
+
+    nome_colecao = "producao"
+    dim_existente = obter_dimensao_colecao_existente(nome_colecao, chroma_path)
+
+    if dim_existente and dim_existente != tamanho_embedding:
+        print(f"⚠️ Coleção '{nome_colecao}' espera dimensão {dim_existente}, mas embeddings são {tamanho_embedding}")
+        nome_colecao = f"{nome_colecao}_{tamanho_embedding}"
+        print(f"🔁 Usando nova coleção: {nome_colecao}")
 
     db = Chroma.from_documents(
         documents=documentos,
         embedding=modelo_falso,
-        persist_directory=chroma_path
+        persist_directory=chroma_path,
+        collection_name=nome_colecao
     )
     db.persist()
-    print("✅ Indexação finalizada.")
+    print(f"✅ Indexação finalizada na coleção '{nome_colecao}'.")
 
 # Execução
 if __name__ == "__main__":
     arquivos = baixar_arquivos_s3()
-    documentos, embeddings = carregar_dados(arquivos)
-    indexar_embeddings(documentos, embeddings)
+    documentos, embeddings, tamanho = carregar_dados(arquivos)
+    indexar_embeddings(documentos, embeddings, tamanho)
