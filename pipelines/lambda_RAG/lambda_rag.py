@@ -31,6 +31,11 @@ def main():
     prefix = "chroma_db/"
     persist_directory = "chroma_db"
 
+    # 2. (Re)inicializa pasta local para teste limpo
+    if os.path.exists(persist_directory):
+        shutil.rmtree(persist_directory)
+    os.makedirs(persist_directory, exist_ok=True)
+
     # 3. Criação ou carregamento do índice Chroma com embeddings do Bedrock
     embeddings = BedrockEmbeddings()
     persist_directory = "chroma_db"
