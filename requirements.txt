@@ -1,32 +1,32 @@
 # Utilitários
-python-dotenv==1.0.1  # Variáveis de ambiente
-psutil==7.0.0  # Monitoramento de sistema
-tenacity==8.2.0  # Retry para chamadas de API (compatível com langchain)
-httpx==0.28.1  # Cliente HTTP assíncrono
+python-dotenv==1.0.1
+psutil==5.9.8
+tenacity==8.2.3
+httpx==0.28.1
 
 # Framework web e servidor ASGI
-fastapi==0.115.9  # Framework para construir APIs compatível com chromadb
-uvicorn==0.33.0  # Servidor para rodar o FastAPI
+fastapi==0.110.0
+uvicorn==0.29.0
 
 # Telegram Bot
-python-telegram-bot==21.6
+python-telegram-bot==21.1
 
 # AWS SDK e serviços
 boto3==1.34.131
 botocore==1.34.131
-langchain-aws==0.1.18  # Integração AWS Bedrock
+langchain-aws==0.1.18
 
 # LangChain (core e integrações)
-langchain==0.2.17  # A versão do langchain que você está usando requer tenacity<9.0
+langchain==0.2.17
 langchain-community==0.2.19
 langchain-core==0.2.43
 
 # VectorStore (ChromaDB) e processamento de PDFs
-langchain-chroma==0.1.4 # Para armazenamento de vetores
-pypdf==5.4.0 # Leitura de PDFs
+langchain-chroma==0.1.4
+pypdf==3.17.4
 
 # Validação de dados
-pydantic==1.10.2  # Validação de modelos
+pydantic==2.7.4
 
-# DataFrames (se usado em outros módulos)
-pandas==1.5.3
+# DataFrames (se necessário)
+pandas==2.2.2
