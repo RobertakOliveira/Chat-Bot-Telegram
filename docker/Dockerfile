@@ -1,48 +1,43 @@
-# Este Dockerfile configura um ambiente leve baseado na imagem oficial do Python 3.9-slim.
-# Ele é projetado para executar uma aplicação Python utilizando o framework FastAPI.
+# Etapa 1: Builder
+FROM python:3.9-slim AS builder
 
-# 1. Define o diretório de trabalho como /app.
-# 2. Instala dependências do sistema necessárias para compilar pacotes Python.
-# 3. Copia o arquivo requirements.txt para o container para instalar as dependências Python.
-# 4. Define a variável de ambiente PYTHONPATH para garantir que o diretório /app seja reconhecido como raiz do projeto.
-# 5. Instala as dependências Python listadas no arquivo requirements.txt.
-# 6. Copia todo o código do projeto para o container.
-# 7. Cria um diretório específico para persistência de dados do ChromaDB.
-# 8. Define variáveis de ambiente padrão para o diretório de persistência do ChromaDB e a região AWS.
-# 9. Expõe a porta 8000, que será usada pela API.
-# 10. Define o comando padrão para iniciar o servidor FastAPI utilizando o Uvicorn.
+WORKDIR /app
 
+# Instala ferramentas para compilar dependências
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# Etapa 2: Final (imagem leve)
 FROM python:3.9-slim
 
 WORKDIR /app
 
-# Instala dependências do sistema necessárias
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libssl-dev \
-    libffi-dev \
-    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONIOENCODING=utf-8 \
+    PYTHONPATH=/app
 
-# Copia os requirements primeiro para aproveitar cache
-COPY requirements.txt .
+# Copia as dependências já instaladas no diretório /install do builder
+COPY --from=builder /install /usr/local
 
-ENV PYTHONPATH=/app
-
-# Instala dependências Python
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copia todo o código
+# Copia o código da aplicação
 COPY . .
 
-# Cria diretório para o ChromaDB
+# Cria diretório do ChromaDB
 RUN mkdir -p /app/data/chroma_db
 
-# Define variáveis de ambiente padrão
+# Variáveis de ambiente padrão
 ENV CHROMA_PERSIST_DIRECTORY=/app/data/chroma_db
 ENV AWS_REGION=us-east-1
 
-# Porta padrão para a API
 EXPOSE 8000
 
-# Comando padrão (pode ser sobrescrito no compose)
 CMD ["uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "8000"]
