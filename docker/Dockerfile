@@ -28,15 +28,30 @@ ENV PYTHONUNBUFFERED=1 \
 # Copia as dependências já instaladas no diretório /install do builder
 COPY --from=builder /install /usr/local
 
+<<<<<<< HEAD
 # Copia o código da aplicação
+=======
+# Instala dependências Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia todo o código
+>>>>>>> cf5489b22073993ac62db669d6f7107d9cd3be71
 COPY . .
 
 # Cria diretório do ChromaDB
 RUN mkdir -p /app/data/chroma_db
 
+<<<<<<< HEAD
 # Variáveis de ambiente padrão
+=======
+# Define pasta app como raiz para garantir que o Python saiba onde procurar os pacotes/modules do seu projeto.
+ENV PYTHONPATH=/app
+
+# Define variáveis de ambiente padrão
+>>>>>>> cf5489b22073993ac62db669d6f7107d9cd3be71
 ENV CHROMA_PERSIST_DIRECTORY=/app/data/chroma_db
 ENV AWS_REGION=us-east-1
+ENV API_URL=http://api:8000/ask
 
 EXPOSE 8000
 
