@@ -1,10 +1,11 @@
 import os
+import sys
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 from telegram.constants import ChatAction, ParseMode
-import json
 import logging
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from Rag_Pipeline import responder_com_langchain
  
 # Configuração de logging
