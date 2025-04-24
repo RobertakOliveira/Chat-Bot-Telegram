@@ -72,8 +72,8 @@ async def ask_question(question: Question):
             "sources": rag_response["sources"]
         })
 
-        if question.chat_id:
-            await telegram_send_message(question.chat_id, rag_response["answer"])
+        # if question.chat_id:
+        #     await telegram_send_message(question.chat_id, rag_response["answer"])
 
         return response
 
