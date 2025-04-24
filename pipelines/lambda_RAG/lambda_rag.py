@@ -36,6 +36,9 @@ def main():
         shutil.rmtree(persist_directory)
     os.makedirs(persist_directory, exist_ok=True)
 
+    # 3. Sempre baixa do S3
+    sync_s3_folder(bucket_name, prefix, persist_directory)
+
     # 3. Criação ou carregamento do índice Chroma com embeddings do Bedrock
     embeddings = BedrockEmbeddings()
     persist_directory = "chroma_db"
