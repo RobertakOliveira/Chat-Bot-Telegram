@@ -39,12 +39,12 @@ def main():
     # 3. Sempre baixa do S3
     sync_s3_folder(bucket_name, prefix, persist_directory)
 
-    # 3. Criação ou carregamento do índice Chroma com embeddings do Bedrock
+    # 4. Instancia o Chroma diretamente com os arquivos baixados
     embeddings = BedrockEmbeddings()
-    persist_directory = "chroma_db"
-    if os.path.exists(persist_directory) and os.listdir(persist_directory):
-        print("Carregando índice já existente...")
-        vectorstore = Chroma(persist_directory=persist_directory, embedding_function=embeddings)
+    vectorstore = Chroma(
+        persist_directory=persist_directory,
+        embedding_function=embeddings
+    )
 
 
 
