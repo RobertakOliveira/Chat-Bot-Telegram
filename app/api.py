@@ -1,108 +1,136 @@
-from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel
-from app.config import API_SECRET_KEY, TELEGRAM_BOT_TOKEN
-from dotenv import load_dotenv
-from fastapi.security import APIKeyHeader
-from typing import Optional
-import httpx
-import logging
-import psutil
-import threading
-import asyncio
+from app.config import API_SECRET_KEY, TELEGRAM_BOT_TOKEN # Configurações sensíveis
+from fastapi import FastAPI, HTTPException, Depends # Framework para criar a API
+from fastapi.security import APIKeyHeader # Para autenticação via header
+from pydantic import BaseModel  # Para validação de dados com modelos
+from typing import Optional # Para tipagem de campos opcionais
+import httpx # Cliente HTTP assíncrono para chamadas externas
+import psutil # Para monitoramento de sistema (CPU, memória)
+import logging # Para registro de logs
 
 # --- Configuração de Logging ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- Configuração Inicial ---
-load_dotenv()
 
+# Cria a aplicação FastAPI com metadados para documentação
 app = FastAPI(
-    title="Chatbot Jurídico API",
-    version="1.0.0",
-    description="API para processamento de perguntas jurídicas com integração RAG e Telegram"
+    title="Chatbot Jurídico API",  # Nome da API
+    version="1.0.0",  # Versão atual
+    description="API para processamento de perguntas jurídicas com integração RAG e Telegram"  # Descrição
 )
 
-# --- Segurança por API Key ---
-API_KEY_NAME = "X-API-KEY"
-api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+# Configuração do sistema de autenticação por API Key
+API_KEY_NAME = "X-API-KEY"  # Nome do header que conterá a chave
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)  # Configura o header
 
+# Função para validar a API Key recebida no header
 async def get_api_key(api_key: Optional[str] = Depends(api_key_header)):
+    # Compara a chave recebida com a chave armazenada nas variáveis de ambiente, se não for válida, retorna erro 403 (Forbidden)
     if api_key != API_SECRET_KEY:
         raise HTTPException(status_code=403, detail="Invalid API Key")
-    return api_key
+    return api_key 
 
-# --- Modelos de Dados ---
+# Modelo Pydantic para validação do payload de perguntas
 class Question(BaseModel):
-    text: str
-    chat_id: Optional[str] = None
-    context: Optional[dict] = None
+    text: str  # Texto da pergunta (campo obrigatório)
+    chat_id: Optional[str] = None  # ID do chat no Telegram (opcional)
+    context: Optional[dict] = None  # Contexto adicional para o RAG (opcional)
 
-# --- Endpoints ---
+# Endpoint para verificação do status da instância
 @app.get("/instance-health")
 async def instance_health():
+    """
+    Endpoint de health check que retorna o status atual da instância
+    e informações de utilização de recursos
+    """
     return {
-        "status": "healthy",
-        "service": "chatbot-api",
-        "cpu": psutil.cpu_percent(),
-        "memory": psutil.virtual_memory().percent
+        "status": "healthy",  # Status geral do serviço
+        "service": "chatbot-api",  # Nome do serviço
+        "cpu": psutil.cpu_percent(),  #% de uso da CPU
+        "memory": psutil.virtual_memory().percent  #% de uso da memória
     }
 
-@app.post("/ask", dependencies=[Depends(get_api_key)])
+# Endpoint principal para envio de perguntas
+@app.post("/ask", dependencies=[Depends(get_api_key)])  # Protegido por API Key
 async def ask_question(question: Question):
+    """
+    Processa perguntas jurídicas e retorna respostas usando sistema RAG.
+    Opcionalmente envia a resposta para o Telegram se chat_id for fornecido.
+    """
     try:
-        # Simulação de resposta do sistema RAG
+        # SIMULAÇÃO: Resposta do sistema RAG (em desenvolvimento)
         rag_response = {
             "answer": "Resposta simulada - sistema RAG em desenvolvimento",
-            "sources": ["Lei 1234/56", "Jurisprudência XYZ"],
-            "confidence": 0.85
+            "sources": ["Lei 1234/56", "Jurisprudência XYZ"],  # Fontes da resposta
+            "confidence": 0.85  # Nível de confiança da resposta (0-1)
         }
 
+        # Constrói a resposta final combinando pergunta e resposta RAG
         response = {
-            "question": question.text,
-            **rag_response
+            "question": question.text,  # Repete a pergunta recebida
+            **rag_response  # Inclui todos os campos da resposta RAG
         }
 
+        # Registra a interação completa no log
         logger.info({
-            "chat_id": question.chat_id,
-            "question": question.text,
-            "answer": rag_response["answer"],
-            "confidence": rag_response["confidence"],
-            "sources": rag_response["sources"]
+            "chat_id": question.chat_id,  # ID do chat (se existir)
+            "question": question.text,  # Texto da pergunta
+            "answer": rag_response["answer"],  # Resposta gerada
+            "confidence": rag_response["confidence"],  # Nível de confiança
+            "sources": rag_response["sources"]  # Fontes utilizadas
         })
 
+        # Se existir chat_id, envia resposta para o Telegram (código comentado)
         # if question.chat_id:
         #     await telegram_send_message(question.chat_id, rag_response["answer"])
 
-        return response
+        return response  # Retorna a resposta para o cliente
 
     except Exception as e:
+        # Em caso de erro, registra exceção completa no log
         logger.exception("Erro ao processar pergunta")
+        # Retorna erro 500 (Internal Server Error) com detalhes
         raise HTTPException(status_code=500, detail=str(e))
 
-# --- Envio para Telegram ---
+# Função para enviar mensagens para o Telegram
 async def telegram_send_message(chat_id: str, text: str):
+    """
+    Envia mensagens para um chat específico no Telegram via bot.
+    Args:
+        chat_id: ID do chat no Telegram
+        text: Mensagem a ser enviada
+    """
+    # Obtém o token do bot das variáveis de ambiente
     bot_token = TELEGRAM_BOT_TOKEN
     if not bot_token:
+        # Se não estiver configurado, retorna erro 500
         raise HTTPException(status_code=500, detail="Telegram bot token not configured")
 
+    # URL da API do Telegram para envio de mensagens
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    
+    # Payload com os dados da mensagem
     payload = {
-        "chat_id": chat_id,
-        "text": text,
-        "parse_mode": "Markdown"
+        "chat_id": chat_id,  # Destinatário
+        "text": text,  # Texto da mensagem
+        "parse_mode": "Markdown"  # Formatação Markdown
     }
 
     try:
+        # Cria cliente HTTP assíncrono e envia a mensagem
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json=payload)
-            response.raise_for_status()
+            response.raise_for_status()  # Levanta exceção para respostas de erro
     except Exception as e:
+        # Em caso de erro, registra exceção completa
         logger.exception("Erro ao enviar mensagem para Telegram")
+        # Retorna erro 500 com detalhes
         raise HTTPException(status_code=500, detail=f"Telegram API error: {str(e)}")
 
-# Rodar localmente: (diretorio raiz)
+
+# Instruções para rodar localmente: (diretorio raiz)
 # uvicorn app.api:app --reload
+
 
 # --- Bot em thread paralela ---
 #def start_bot():

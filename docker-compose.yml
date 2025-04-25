@@ -1,35 +1,36 @@
+# Define os serviços que compõem a aplicação
 services:
+  # Serviço da API FastAPI
   api:
-    container_name: chatbot-api
+    container_name: chatbot-api  # Nome explícito para o container
     build:
-      context: .
-      dockerfile: docker/Dockerfile.api
+      context: .  # Usa o diretório atual como contexto de build
+      dockerfile: docker/Dockerfile.api  # Caminho para o Dockerfile da API
     ports:
-      - "8080:8080"
+      - "8080:8080"  # Expõe a porta 8080 do container para a porta 8080 do host
     env_file:
-      - .env  # Carrega variáveis em runtime
-    restart: unless-stopped
+      - .env  # Carrega variáveis de ambiente do arquivo .env (configurações sensíveis)
+    restart: unless-stopped  # Reinicia automaticamente, exceto se parado manualmente
     networks:
-      - chatbot-network
-    # volumes:
-    #       - ../data/chroma_db:/app/data/chroma_db
-    #       - ../logs:/app/logs
+      - chatbot-network  # Conecta à rede dedicada
 
+  # Serviço do Bot do Telegram
   bot:
-    container_name: telegram-bot
+    container_name: telegram-bot  # Nome explícito para o container
     build:
-      context: .
-      dockerfile: docker/Dockerfile.bot
+      context: .  # Mesmo contexto de build
+      dockerfile: docker/Dockerfile.bot  # Caminho para o Dockerfile do Bot
     env_file:
-      - .env  # Carrega variáveis em runtime
+      - .env  # Mesmo arquivo de variáveis de ambiente
     environment:
-      - API_URL=http://api:8080/ask
-    restart: unless-stopped
+      - API_URL=http://api:8080/ask  # URL da API (usa nome do serviço como host)
+    restart: unless-stopped  # Mesma política de reinício
     depends_on:
-      - api
+      - api  # Garante que a API inicie antes do bot
     networks:
-      - chatbot-network
+      - chatbot-network  # Mesma rede
 
+# Configuração de rede personalizada
 networks:
   chatbot-network:
-    driver: bridge
+    driver: bridge  # Cria uma rede bridge isolada para comunicação entre serviços

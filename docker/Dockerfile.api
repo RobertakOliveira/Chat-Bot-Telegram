@@ -1,10 +1,13 @@
+# Usa a mesma imagem base Python 3.9 slim
 FROM python:3.9-slim
 
+# Define o mesmo diretório de trabalho
 WORKDIR /app
 
-# Copia apenas os arquivos necessários
-COPY ./app ./app
+# Copia apenas a pasta app (otimização para construção em camadas)
+COPY app ./app
 
+# Instala as dependências específicas da API
 RUN pip install --no-cache-dir \
     fastapi==0.95.2 \
     uvicorn==0.22.0 \
@@ -12,4 +15,5 @@ RUN pip install --no-cache-dir \
     httpx==0.24.1 \
     psutil==5.9.5
 
+# Comando para iniciar a aplicação
 CMD ["uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "8080"]

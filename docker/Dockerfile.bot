@@ -1,12 +1,17 @@
+# Usa a imagem oficial do Python 3.9 com versão slim (reduzida)
 FROM python:3.9-slim
 
+# Define o diretório de trabalho dentro do container
 WORKDIR /app
 
+# Copia o conteúdo da pasta ./app do host para /app no container
 COPY ./app ./app
 
+# Instala as dependências do Python sem cache para reduzir tamanho da imagem
 RUN pip install --no-cache-dir \
-    python-telegram-bot==20.3 \
-    aiohttp==3.8.4 \
-    python-dotenv==1.0.0
+    python-telegram-bot==20.3 \       
+    aiohttp==3.8.4 \                  
+    python-dotenv==1.0.0              
 
+# Comando que será executado quando o container iniciar (Roda o módulo bot dentro da pasta app)
 CMD ["python", "-m", "app.bot"]
