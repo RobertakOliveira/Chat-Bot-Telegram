@@ -7,6 +7,9 @@ from typing import Optional
 import httpx
 import logging
 import psutil
+import threading
+import asyncio
+from app.bot import run_bot
 
 # --- Configuração de Logging ---
 logging.basicConfig(level=logging.INFO)
@@ -61,7 +64,6 @@ async def ask_question(question: Question):
             **rag_response
         }
 
-         # ✅ LOG por usuário (para CloudWatch)
         logger.info({
             "chat_id": question.chat_id,
             "question": question.text,
@@ -70,8 +72,8 @@ async def ask_question(question: Question):
             "sources": rag_response["sources"]
         })
 
-        if question.chat_id:
-            await telegram_send_message(question.chat_id, rag_response["answer"])
+        # if question.chat_id:
+        #     await telegram_send_message(question.chat_id, rag_response["answer"])
 
         return response
 
@@ -79,13 +81,13 @@ async def ask_question(question: Question):
         logger.exception("Erro ao processar pergunta")
         raise HTTPException(status_code=500, detail=str(e))
 
-# --- Funções Auxiliares ---
+# --- Envio para Telegram ---
 async def telegram_send_message(chat_id: str, text: str):
     bot_token = TELEGRAM_BOT_TOKEN
     if not bot_token:
         raise HTTPException(status_code=500, detail="Telegram bot token not configured")
 
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"   # URL da API do Telegram para enviar mensagens
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     payload = {
         "chat_id": chat_id,
         "text": text,
@@ -99,3 +101,13 @@ async def telegram_send_message(chat_id: str, text: str):
     except Exception as e:
         logger.exception("Erro ao enviar mensagem para Telegram")
         raise HTTPException(status_code=500, detail=f"Telegram API error: {str(e)}")
+
+# --- Bot em thread paralela ---
+#def start_bot():
+   # loop = asyncio.new_event_loop()
+    # asyncio.set_event_loop(loop)
+    # run_bot()
+
+#@app.on_event("startup")
+#def on_startup():
+   # threading.Thread(target=start_bot, daemon=True).start()

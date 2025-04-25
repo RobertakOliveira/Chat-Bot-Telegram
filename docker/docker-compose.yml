@@ -1,30 +1,25 @@
-version: '3.8'
-
 services:
-  # Serviço da API
   api:
     build:
-      context: ..  # Define o diretório raiz como contexto de build
-      dockerfile: docker/Dockerfile  # Especifica o Dockerfile para construir a imagem
-    command: uvicorn app.api:app --host 0.0.0.0 --port 8000  # Comando para iniciar o servidor FastAPI
+      context: ..
+      dockerfile: docker/api.Dockerfile
     ports:
-      - "8000:8000"  # Mapeia a porta 8000 do container para a porta 8000 do host
+      - "8000:8000"
     env_file:
-      - ../.env  # Carrega variáveis de ambiente do arquivo .env
+      - ../.env
     volumes:
-      - ../data/chroma_db:/app/data/chroma_db  # Monta o diretório de dados no container
-      - ../logs:/app/logs  # Monta o diretório de logs no container
-
-  # Serviço do Bot
+      - ../data/chroma_db:/app/data/chroma_db
+      - ../logs:/app/logs
+ 
   bot:
     build:
-      context: ..  # Define o diretório raiz como contexto de build
-      dockerfile: docker/Dockerfile  # Especifica o Dockerfile para construir a imagem
-    command: python app/bot.py  # Comando para executar o script do bot
+      context: ..
+      dockerfile: docker/bot.Dockerfile
     env_file:
-      - ../.env  # Carrega variáveis de ambiente do arquivo .env
+      - ../.env
     depends_on:
-      - api  # Garante que o serviço da API seja iniciado antes do bot
+      - api
     volumes:
-      - ../data/chroma_db:/app/data/chroma_db  # Monta o diretório de dados no container
-      - ../logs:/app/logs  # Monta o diretório de logs no container
+      - ../data/chroma_db:/app/data/chroma_db
+      - ../logs:/app/logs
+ 
