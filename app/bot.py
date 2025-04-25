@@ -61,3 +61,16 @@ def run_bot():
 
     # Inicia o bot
     app.run_polling()
+
+def check_config():
+    print("🛠️ Verificando configurações...\n")
+
+    print(f"TELEGRAM_BOT_TOKEN: {'✅' if TELEGRAM_BOT_TOKEN else '❌ Não configurado'}")
+    print(f"API_URL: {'✅' + API_URL if API_URL else '❌ Não configurado'}")
+    print(f"API_SECRET_KEY: {'✅' if API_SECRET_KEY else '❌ Não configurado'}")
+
+    print("\n")
+
+if __name__ == "__main__":
+    check_config()
+    run_bot()
