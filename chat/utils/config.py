@@ -108,16 +108,16 @@ class ConfigLoader:
                 )),
 
             # Configurações de ChromaDB (nova configuração)
-            "CHROMA_DB_PATH": self._get_param_with_fallback( # Diretório de persistência
+            "CHROMA_DB_PATH": self._get_param_with_fallback(  # Diretório de persistência
                 "/chatbot-juridico/chroma-db-path",
                 "CHROMA_DB_PATH",
                 "chroma_db"
             ),
 
-            "S3_BUCKET_CHROMADB": self._get_param_with_fallback( # Bucket para guardar o ChromaDB
-            "/chatbot-juridico/s3-bucket-chromadb",
-            "S3_BUCKET_CHROMADB",
-            "consultor-juridico-chromadb"
+            "S3_BUCKET_CHROMADB": self._get_param_with_fallback(  # Bucket para guardar o ChromaDB
+                "/chatbot-juridico/s3-bucket-chromadb",
+                "S3_BUCKET_CHROMADB",
+                "consultor-juridico-chromadb"
             ),
 
             # Configurações de PDF Processing
@@ -147,7 +147,7 @@ class ConfigLoader:
             "LEGAL_SEPARATORS": self._get_param_with_fallback(
                 "/chatbot-juridico/legal-separators",
                 "LEGAL_SEPARATORS",
-                "\nArtigo,\n§,\nParágrafo,\nInciso,\nAlínea,\nCAPÍTULO,\nSeção,\n\n,\n, "
+                "\nArtigo,\n§,\nParágrafo,\nInciso,\nAlínea,\nCAPÍTULO,\nSeção,\nI\\. ,\nII\\. ,\nIII\\. ,\nIV\\. ,\nV\\. ,\nDECIDE:,\nRELATOR:,\nAGRAVO,\nRECURSO,\n\n,\n, "
             ),
             "LEGAL_IGNORE_PATTERNS": self._get_param_with_fallback(
                 "/chatbot-juridico/legal-ignore-patterns",
@@ -159,16 +159,24 @@ class ConfigLoader:
                 r"https?://[^\s]+,"
                 r"Assinado\s(eletronicamente|digitalmente)\spor:.*?\d{2}/\d{2}/\d{4},"
                 r"N(ú|u)mero\sdo\sdocumento:.*?\d+,"
-                r"\(e-STJ\sFl\.\d+\),"
                 r"Num\.\s\d+\s-\sPág\.\s\d+,"
-                r"S\sE\sL\sA\sJ\sA\sZ\sU\sO\sS\sN\sR\sÁ\sK.*?(?=\n|$),"
-                r"i+f+i+.*?m+\d+,"
                 r"^\s*[\W\d]{1,3}\s*$"
             ),
             "LEGAL_PRESERVE_PATTERNS": self._get_param_with_fallback(
                 "/chatbot-juridico/legal-preserve-patterns",
                 "LEGAL_PRESERVE_PATTERNS",
-                r"Art\. \d+º.*?(?=\nArt\.|\n§|$),§ \d+º.*?(?=\n§|\nArt\.|$),VOTO:.*?(?=ACÓRDÃO:|$),RELATÓRIO:.*?(?=VOTO:|$),ACÓRDÃO:.*?(?=PROCESSO:|$)"
+                r"Art(?:igo)?\.?\s*\d+º.*?(?=\n|$),"
+                r"§\s?\d+º.*?(?=\n|$),"
+                r"Processo\s\d+\.\d+\.\d+,"
+                r"RELATOR(?:A|ES)?:\s*[A-ZÀ-Ú\s]+,"
+                r"DECIDE:.*?(?=PROCESSO:|$),"
+                r"AGRAVO\s(?:EM|DE)\s[A-ZÀ-Ú\s]+,"
+                r"RECURSO\s(?:EXTRAORDINÁRIO|ESPECIAL),"
+                r"Art\. \d+º.*?(?=\nArt\.|\n§|$),"
+                r"§ \d+º.*?(?=\n§|\nArt\.|$),"
+                r"VOTO:.*?(?=ACÓRDÃO:|$),"
+                r"RELATÓRIO:.*?(?=VOTO:|$),"
+                r"ACÓRDÃO:.*?(?=PROCESSO:|$)"
             ),
             "MIN_VALID_CHUNK_LINES": int(
                 self._get_param_with_fallback(
@@ -224,11 +232,13 @@ class PDFConfig:
         # Cache interno para padrões compilados
         self._compiled_ignore = None
         self._compiled_preserve = None
+        self._compiled_separators = None
 
     @property
     def LEGAL_IGNORE_PATTERNS(self) -> list[re.Pattern]:
         """Padrões compilados (cacheados na primeira chamada)"""
         if self._compiled_ignore is None:
+            # Mantém a divisão por vírgula para compatibilidade com SSM
             patterns = [p.strip()
                         for p in config.LEGAL_IGNORE_PATTERNS.split(',') if p.strip()]
             self._compiled_ignore = [re.compile(

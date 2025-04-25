@@ -1,92 +1,88 @@
 # chat/tests/core/test_full_pipeline.py
 import tempfile
-from langchain_community.vectorstores import Chroma
 from chat.core.pdf_processing import process_pdf_from_s3
 from chat.core.bedrock_embeddings import BedrockEmbeddingHandler
+from chat.core.vector_store import index_documents_in_chroma, initialize_chroma_instance
 from chat.core.query_embeddings import get_query_embedding
 from langchain_core.documents import Document
-from chat.utils.logger import logger
+from chat.utils.logger import get_logger
+
+logger = get_logger("test_full_pipeline")
 
 # Configurações de teste
 BUCKET_NAME = "consultor-juridico"
 TEST_PDF_KEY = "juridicos/38-agravo.pdf"
-TEMPDIR = tempfile.mkdtemp()
+COLLECTION_NAME = "test_pipeline_collection"
 
 
 def test_full_pipeline():
-    print("\n🔍 Iniciando teste completo do pipeline jurídico...")
+    logger.info("\n🔍 Iniciando teste completo do pipeline jurídico...")
 
     try:
         # 1. Processamento do PDF
-        print("\n📥 Etapa 1: Download e processamento do PDF...")
+        logger.info("\n📥 Etapa 1: Download e processamento do PDF...")
         documents = process_pdf_from_s3(BUCKET_NAME, TEST_PDF_KEY)
 
         if not documents:
             raise ValueError("Nenhum documento processado")
 
-        print(f"✅ {len(documents)} chunks gerados com sucesso")
+        logger.info(f"✅ {len(documents)} chunks gerados com sucesso")
 
-        # 2. Geração de embeddings
-        print("\n🧠 Etapa 2: Gerando embeddings...")
-        embedder = BedrockEmbeddingHandler()
-        embeddings_data = embedder.process_documents(documents)
+        # 2. Geração de embeddings e indexação
+        logger.info("\n🧠 Etapa 2: Gerando embeddings e indexando...")
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
 
-        if not embeddings_data:
-            raise ValueError("Falha na geração de embeddings")
-
-        print(f"✅ {len(embeddings_data)} embeddings gerados")
-
-        # 3. Criação do ChromaDB
-        print("\n🗄️ Etapa 3: Criando vetorstore no ChromaDB...")
-        # TODO: Substituir por implementação oficial do Chroma quando disponível
-        # ------------------------------------------------------------
-        # ATENÇÃO: Esta é uma implementação básica temporária do Chroma
-        # que será substituída pela versão oficial do módulo de vetorização
-        # ------------------------------------------------------------
-        vector_db = Chroma.from_documents(
-            documents=[Document(page_content=item['text'], metadata=item['metadata'])
-                       for item in embeddings_data],
-            embedding=embedder.embeddings,
-            persist_directory=TEMPDIR
+        # Usando a função de ingestão da Rhafa
+        index_documents_in_chroma(
+            texts=texts,
+            metadatas=metadatas,
+            case_id="test_case",
+            collection_name=COLLECTION_NAME
         )
-        print(f"✅ ChromaDB temporário criado em: {TEMPDIR}")
+        logger.info(f"✅ Documentos indexados na coleção '{COLLECTION_NAME}'")
 
-        # 4. Teste de consultas
-        print("\n🔎 Etapa 4: Testando consultas jurídicas...")
-        # TODO: Migrar para a interface oficial de consultas quando disponível
-        # ------------------------------------------------------------
-        # NOTA: Esta consulta direta ao Chroma será substituída pela camada
-        # de abstração do módulo oficial de vector store
-        # ------------------------------------------------------------
+        # 3. Teste de consultas
+        logger.info("\n🔎 Etapa 4: Testando consultas jurídicas...")
         test_queries = [
             "Qual o fundamento legal do agravo?",
             "Quem é o relator do caso?",
             "Qual foi a decisão proferida?"
         ]
 
+        # Inicializa a instância do Chroma
+        chroma_instance = initialize_chroma_instance(COLLECTION_NAME)
+
         for query in test_queries:
-            print(f"\n💡 Consulta: '{query}'")
+            logger.info(f"\n💡 Consulta: '{query}'")
 
             # Gera embedding da pergunta
             query_embedding = get_query_embedding(query)
 
-            # Busca no ChromaDB
-            results = vector_db.similarity_search_by_vector(
+            # Busca no ChromaDB usando a implementação da Rhafa
+            results = chroma_instance.similarity_search_by_vector(
                 query_embedding, k=1)
 
             if results:
                 doc = results[0]
-                print(
+                logger.info(
                     f"📌 Documento relevante (página {doc.metadata['page']}):")
-                print(doc.page_content[:300] + "...")
+                logger.info(doc.page_content[:300] + "...")
             else:
-                print("⚠️ Nenhum resultado encontrado")
+                logger.info("⚠️ Nenhum resultado encontrado")
 
-        print("\n🎉 Teste concluído com sucesso!")
+        logger.info("\n🎉 Teste concluído com sucesso!")
 
     except Exception as e:
         logger.error(f"❌ Falha no teste: {str(e)}")
         raise
+    finally:
+        # Limpeza opcional: remover a coleção de teste após o teste
+        try:
+            chroma_instance.delete_collection()
+            logger.info(f"🧹 Coleção '{COLLECTION_NAME}' removida")
+        except Exception as e:
+            logger.warning(f"⚠️ Não foi possível limpar a coleção: {str(e)}")
 
 
 if __name__ == "__main__":
