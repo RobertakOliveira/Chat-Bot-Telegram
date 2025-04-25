@@ -1,0 +1,35 @@
+services:
+  api:
+    container_name: chatbot-api
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env  # Carrega variáveis em runtime
+    restart: unless-stopped
+    networks:
+      - chatbot-network
+    # volumes:
+    #       - ../data/chroma_db:/app/data/chroma_db
+    #       - ../logs:/app/logs
+
+  bot:
+    container_name: telegram-bot
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.bot
+    env_file:
+      - .env  # Carrega variáveis em runtime
+    environment:
+      - API_URL=http://api:8080/ask
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - chatbot-network
+
+networks:
+  chatbot-network:
+    driver: bridge

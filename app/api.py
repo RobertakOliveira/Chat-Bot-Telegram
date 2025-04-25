@@ -9,7 +9,6 @@ import logging
 import psutil
 import threading
 import asyncio
-from app.bot import run_bot
 
 # --- Configuração de Logging ---
 logging.basicConfig(level=logging.INFO)
@@ -101,6 +100,9 @@ async def telegram_send_message(chat_id: str, text: str):
     except Exception as e:
         logger.exception("Erro ao enviar mensagem para Telegram")
         raise HTTPException(status_code=500, detail=f"Telegram API error: {str(e)}")
+
+# Rodar localmente: (diretorio raiz)
+# uvicorn app.api:app --reload
 
 # --- Bot em thread paralela ---
 #def start_bot():
