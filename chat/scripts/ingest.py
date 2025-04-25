@@ -5,6 +5,7 @@ import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import random
+import tarfile
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
@@ -14,12 +15,24 @@ from chat.utils.aws_clients import s3_client
 from chat.utils.config import config
 from chat.utils.logger import get_logger
 from langchain.schema import Document
+from chat.core.upload_chroma_to_s3 import upload_chroma_to_s3
 
 logger = get_logger("ingest")
 MAX_WORKERS = 4
 
 def generate_collection_name():
     return f"collection_{random.randint(10000, 99999)}"
+
+def compress_chroma_db(collection_name):
+    """Compacta o diretório do ChromaDB em um .tar.gz"""
+    output_file = f"chroma_db.tar.gz"
+    source_dir = config.CHROMA_DB_PATH  # Ex: "chroma_db"
+
+    with tarfile.open(output_file, "w:gz") as tar:
+        tar.add(source_dir, arcname=os.path.basename(source_dir))
+
+    print(f"📦 Banco Chroma compactado como: {output_file}")
+    return output_file
 
 def ingest_pdfs(bucket_name: str, collection_name: str):
     """Processa todos os PDFs do bucket S3 e indexa no ChromaDB."""
@@ -66,6 +79,11 @@ def ingest_pdfs(bucket_name: str, collection_name: str):
             logger.warning("⚠️ Nenhum documento válido para indexar.")
 
         logger.info(f"🏁 Ingestão finalizada em {time.time() - start_total:.2f} segundos")
+
+        # Compacta e faz upload do ChromaDB
+        logger.info("🔄 Compactando e enviando ChromaDB para o S3...")
+        compressed_file = compress_chroma_db(collection_name)
+        upload_chroma_to_s3(compressed_file)
 
     except Exception as e:
         logger.error(f"🔥 Falha crítica: {str(e)}")
