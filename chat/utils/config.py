@@ -50,7 +50,7 @@ class ConfigLoader:
             "S3_BUCKET_NAME": self._get_param_with_fallback(
                 "/chatbot-juridico/s3-bucket-name",
                 "S3_BUCKET_NAME",
-                "consultor-juridico"
+                "consultor-juridico-teste"
             ),
             "LOG_GROUP": self._get_param_with_fallback(
                 "/chatbot-juridico/log-group",
@@ -106,6 +106,19 @@ class ConfigLoader:
                     "BEDROCK_TEXT_TRUNCATE",
                     "7500"  # Margem de segurança para tokenização
                 )),
+
+            # Configurações de ChromaDB (nova configuração)
+            "CHROMA_DB_PATH": self._get_param_with_fallback( # Diretório de persistência
+                "/chatbot-juridico/chroma-db-path",
+                "CHROMA_DB_PATH",
+                "chroma_db"
+            ),
+
+            "S3_BUCKET_CHROMADB": self._get_param_with_fallback( # Bucket para guardar o ChromaDB
+            "/chatbot-juridico/s3-bucket-chromadb",
+            "S3_BUCKET_CHROMADB",
+            "consultor-juridico-chromadb"
+            ),
 
             # Configurações de PDF Processing
             "CHUNK_SIZE": int(

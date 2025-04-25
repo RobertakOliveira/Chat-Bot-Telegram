@@ -1,12 +1,15 @@
+# chat/core/vector_store.py
+
 from langchain_chroma import Chroma
 from langchain.schema import Document
 from chat.core.bedrock_embeddings import initialize_embedding_service
 from chat.utils.logger import get_logger
+from chat.utils.config import config
 import os
 
 logger = get_logger("vector_store")
 
-CHROMA_PERSIST_DIRECTORY = "chroma_db"
+CHROMA_PERSIST_DIRECTORY = config.CHROMA_DB_PATH
 
 def initialize_chroma_instance(collection_name: str):
     """
