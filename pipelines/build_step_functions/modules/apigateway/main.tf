@@ -1,5 +1,5 @@
 resource "aws_apigatewayv2_api" "lambda_api" {
-  name          = "lambda-entry-api"
+  name          = "oabot-juridico"
   protocol_type = "HTTP"
 }
 
@@ -13,9 +13,10 @@ resource "aws_apigatewayv2_integration" "lambda_integration" {
 
 resource "aws_apigatewayv2_route" "lambda_route" {
   api_id    = aws_apigatewayv2_api.lambda_api.id
-  route_key = "POST /lambda-entry"
+  route_key = "POST /webhook"
   target    = "integrations/${aws_apigatewayv2_integration.lambda_integration.id}"
 }
+
 
 resource "aws_apigatewayv2_stage" "default_stage" {
   api_id      = aws_apigatewayv2_api.lambda_api.id
@@ -23,10 +24,10 @@ resource "aws_apigatewayv2_stage" "default_stage" {
   auto_deploy = true
 }
 
-resource "aws_lambda_permission" "apigw_invoke" {
+resource "aws_lambda_permission" "apigw_telegram" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   function_name = var.lambda_invoke_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.lambda_api.execution_arn}/*/POST/lambda-entry"
+  source_arn    = "${aws_apigatewayv2_api.lambda_api.execution_arn}/*/POST/webhook"
 }
