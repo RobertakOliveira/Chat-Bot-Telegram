@@ -45,7 +45,7 @@ def lambda_handler(event, context):
     #FIm telegram, começo rag
 
     # 1. Define bucket e pasta local
-    bucket_name = "bucketembeddingssprint7"
+    bucket_name = "bucketembeddingssprint777"
     prefix = "chroma_db/"
     persist_directory = "/temp/chroma_db"
 
