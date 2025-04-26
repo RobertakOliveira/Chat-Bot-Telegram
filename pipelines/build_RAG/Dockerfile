@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/python:3.12
+FROM lukewiwa/aws-lambda-python-sqlite:3.10
 
 # Define o diretório correto da pasta lambda_RAG relativa ao Dockerfile
 COPY application/ ${LAMBDA_TASK_ROOT}/
