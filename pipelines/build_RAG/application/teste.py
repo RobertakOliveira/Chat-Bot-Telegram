@@ -33,9 +33,9 @@ def handler(event, context):
     print("*** Received event")
 
     chat_id = body['message']['chat']['id']
-    user_name = body['message']['from']['username']
+    user_name = body['message']['from'].get('username', 'Desconhecido')
     message_text = body['message']['text']
-    message_id = body['message']['message_id'] 
+    message_id = body['message']['message_id']
 
     print(f"*** chat id: {chat_id}")
     print(f"*** user name: {user_name}")
