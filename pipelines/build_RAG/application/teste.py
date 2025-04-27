@@ -47,7 +47,7 @@ def handler(event, context):
     # 1. Define bucket e pasta local
     bucket_name = "bucketembeddingssprint777"
     prefix = "chroma_db/"
-    persist_directory = "/temp/chroma_db"
+    persist_directory = "/tmp/chroma_db"
 
     # 2. (Re)inicializa pasta local para teste limpo
     if os.path.exists(persist_directory):
