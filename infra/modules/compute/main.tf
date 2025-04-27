@@ -1,4 +1,10 @@
-# Data source para buscar a AMI (Amazon Machine Image) mais recente do Ubuntu para instâncias EC2.
+# 📦 Variáveis
+variable "chroma_bucket_name" {
+  description = "Nome do bucket S3 para ChromaDB"
+  type        = string
+}
+
+# 🔍 Data source para buscar a AMI (Amazon Machine Image) mais recente do Ubuntu para instâncias EC2.
 data "aws_ami" "ubuntu" {
   most_recent = true
 
@@ -15,7 +21,7 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"]
 }
 
-# Security Group para a instância EC2 do Chatbot.
+# 🔒 Security Group para a instância EC2 do Chatbot.
 resource "aws_security_group" "chatbot_sg" {
   name        = "chatbot-sg-${var.environment}"
   description = "Chatbot Security Group"
@@ -45,17 +51,19 @@ resource "aws_security_group" "chatbot_sg" {
   }
 }
 
-# IAM Role para a instância EC2 do Chatbot.
+# 👤 IAM Role para a instância EC2 do Chatbot.
 resource "aws_iam_role" "chatbot_role" {
   name = "chatbot-role-${var.environment}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
-    Statement = [{
-      Action    = "sts:AssumeRole",
-      Effect    = "Allow",
-      Principal = { Service = "ec2.amazonaws.com" }
-    }]
+    Statement = [ 
+      {
+        Action    = "sts:AssumeRole",
+        Effect    = "Allow",
+        Principal = { Service = "ec2.amazonaws.com" }
+      }
+    ]
   })
 
   tags = merge(
@@ -66,7 +74,7 @@ resource "aws_iam_role" "chatbot_role" {
   )
 }
 
-# Permissões SSM
+# 🔑 Permissões SSM
 resource "aws_iam_role_policy_attachment" "ssm_managed_instance" {
   role       = aws_iam_role.chatbot_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
@@ -77,7 +85,7 @@ resource "aws_iam_role_policy_attachment" "ssm_directory_access" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMDirectoryServiceAccess"
 }
 
-# Política IAM associada ao papel do Chatbot.
+# 📜 Política IAM associada ao papel do Chatbot.
 resource "aws_iam_role_policy" "chatbot_policy" {
   name = "chatbot-policy-${var.environment}"
   role = aws_iam_role.chatbot_role.id
@@ -120,20 +128,39 @@ resource "aws_iam_role_policy" "chatbot_policy" {
   })
 }
 
-# Perfil de instância IAM
+# 🖥️ Perfil de instância IAM
 resource "aws_iam_instance_profile" "chatbot_profile" {
   name = "chatbot-profile-${var.environment}"
   role = aws_iam_role.chatbot_role.name
 }
 
-# Instância EC2 para o Chatbot (sem SSH, com SSM)
+# 🚀 Instância EC2 para o Chatbot (com user_data atualizado)
 resource "aws_instance" "chatbot_server" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   subnet_id              = var.subnet_id
   vpc_security_group_ids = [aws_security_group.chatbot_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.chatbot_profile.name
-  user_data              = filebase64("${path.module}/bootstrap.sh")
+  
+  # 🛠️ Novo user_data para baixar o ChromaDB
+  user_data = base64encode(<<-EOF
+              #!/bin/bash
+              # Configuração inicial do Docker...
+
+              # Espera até que o ChromaDB esteja pronto (máx. 10 tentativas)
+              for i in {1..10}; do
+                if aws s3 ls s3://${var.chroma_bucket_name}/ready_flag; then
+                  aws s3 cp s3://${var.chroma_bucket_name}/chroma_db.tar.gz /tmp/
+                  mkdir -p /opt/chatbot/data/
+                  tar -xzvf /tmp/chroma_db.tar.gz -C /opt/chatbot/data/
+                  break
+                fi
+                sleep 30
+              done
+
+              # Inicia a aplicação normalmente...
+              EOF
+            )
 
   tags = {
     Name        = "MinhaInstance1"
@@ -156,7 +183,7 @@ resource "aws_instance" "chatbot_server" {
   }
 }
 
-# Alarme do CloudWatch para uso de CPU
+# 📈 Alarme do CloudWatch para uso de CPU
 resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   alarm_name          = "chatbot-cpu-high-${var.environment}"
   comparison_operator = "GreaterThanOrEqualToThreshold"
@@ -179,7 +206,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   )
 }
 
-# Dashboard do CloudWatch
+# 📊 Dashboard do CloudWatch
 resource "aws_cloudwatch_dashboard" "chatbot_dashboard" {
   dashboard_name = "chatbot-dashboard-${var.environment}"
 
@@ -193,16 +220,16 @@ resource "aws_cloudwatch_dashboard" "chatbot_dashboard" {
         height = 6
         properties = {
           metrics = [
-            ["AWS/EC2", "CPUUtilization", "InstanceId", aws_instance.chatbot_server.id, {"label": "CPU Usage"}],
-            [".", "NetworkIn", ".", ".", {"label": "Network In"}],
-            [".", "NetworkOut", ".", ".", {"label": "Network Out"}],
-            [".", "DiskReadOps", ".", ".", {"label": "Disk Read Ops"}],
-            [".", "DiskWriteOps", ".", ".", {"label": "Disk Write Ops"}]
+            ["AWS/EC2", "CPUUtilization", "InstanceId", aws_instance.chatbot_server.id, {"label": "🔥 CPU Usage"}],
+            [".", "NetworkIn", ".", ".", {"label": "📥 Network In"}],
+            [".", "NetworkOut", ".", ".", {"label": "📤 Network Out"}],
+            [".", "DiskReadOps", ".", ".", {"label": "📖 Disk Read Ops"}],
+            [".", "DiskWriteOps", ".", ".", {"label": "✍️ Disk Write Ops"}]
           ]
           view    = "timeSeries"
           stacked = false
           region  = var.aws_region
-          title   = "EC2 Instance Metrics"
+          title   = "📊 EC2 Instance Metrics"
           period  = 300
           stat    = "Average"
         }
@@ -214,14 +241,14 @@ resource "aws_cloudwatch_dashboard" "chatbot_dashboard" {
         width  = 12
         height = 3
         properties = {
-          markdown = "### Chatbot Jurídico\n**Instance ID:** ${aws_instance.chatbot_server.id}\n**Public IP:** ${aws_instance.chatbot_server.public_ip}"
+          markdown = "### 🤖 Chatbot Jurídico\n**Instance ID:** ${aws_instance.chatbot_server.id}\n**Public IP:** ${aws_instance.chatbot_server.public_ip}"
         }
       }
     ]
   })
 }
 
-# Elastic IP para a instância EC2 do Chatbot
+# 🌐 Elastic IP para a instância EC2 do Chatbot
 resource "aws_eip" "chatbot_eip" {
   instance = aws_instance.chatbot_server.id
   tags     = merge(var.common_tags, { Name = "chatbot-eip-${var.environment}" })
