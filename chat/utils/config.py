@@ -22,8 +22,12 @@ from typing import Any
 from botocore.exceptions import ClientError, NoCredentialsError
 from chat.utils.logger import get_logger
 
-logger = get_logger("config")
+# =============================================
+#        INSIRA SEU NOME DE USUÁRIO AQUI
+# =============================================
+USER = "talita"
 
+logger = get_logger("config")
 try:
     from chat.utils.aws_clients import ssm_client
     AWS_AVAILABLE = True
@@ -50,7 +54,7 @@ class ConfigLoader:
             "S3_BUCKET_NAME": self._get_param_with_fallback(
                 "/chatbot-juridico/s3-bucket-name",
                 "S3_BUCKET_NAME",
-                "consultor-juridico-teste"
+                f"consultor-juridico-{USER}"
             ),
             "LOG_GROUP": self._get_param_with_fallback(
                 "/chatbot-juridico/log-group",
@@ -117,7 +121,7 @@ class ConfigLoader:
             "S3_BUCKET_CHROMADB": self._get_param_with_fallback(  # Bucket para guardar o ChromaDB
                 "/chatbot-juridico/s3-bucket-chromadb",
                 "S3_BUCKET_CHROMADB",
-                "consultor-juridico-chromadb"
+                f"consultor-juridico-chromadb-{USER}"
             ),
 
             # Configurações de PDF Processing
