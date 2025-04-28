@@ -113,6 +113,7 @@ resultados_test.txt
 *.tfstate
 *.tfstate.backup
 *.tfvars
+terraform.tfvars
 *.tfvars.json
 
 >>>>>>> Stashed changes
@@ -153,6 +154,8 @@ cache/lm-studio/
 *.sqlite3
 *.env
 .env*.local
+kat
+kat311
 
 <<<<<<< Updated upstream
 .env_bootstrap
