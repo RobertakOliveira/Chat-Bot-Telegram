@@ -3,9 +3,11 @@
 import sys
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import random
 import tarfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import boto3  # <-- Novo import necessário
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
@@ -25,14 +27,25 @@ def generate_collection_name():
 
 def compress_chroma_db(collection_name):
     """Compacta o diretório do ChromaDB em um .tar.gz"""
-    output_file = f"chroma_db.tar.gz"
-    source_dir = config.CHROMA_DB_PATH  # Ex: "chroma_db"
+    timestamp = int(time.time())
+    output_file = f"chroma_db_{timestamp}.tar.gz"  # <-- agora com timestamp
+    source_dir = config.CHROMA_DB_PATH
 
     with tarfile.open(output_file, "w:gz") as tar:
         tar.add(source_dir, arcname=os.path.basename(source_dir))
 
     print(f"📦 Banco Chroma compactado como: {output_file}")
     return output_file
+
+def verify_upload(bucket, key):
+    """Verifica se o upload para S3 foi bem-sucedido"""
+    try:
+        head = s3_client.head_object(Bucket=bucket, Key=key)
+        if head['ContentLength'] > 0:
+            return True
+    except Exception as e:
+        logger.error(f"Erro na verificação de upload para {key}: {str(e)}")
+    return False
 
 def ingest_pdfs(bucket_name: str, collection_name: str):
     """Processa todos os PDFs do bucket S3 e indexa no ChromaDB."""
@@ -80,10 +93,54 @@ def ingest_pdfs(bucket_name: str, collection_name: str):
 
         logger.info(f"🏁 Ingestão finalizada em {time.time() - start_total:.2f} segundos")
 
-        # Compacta e faz upload do ChromaDB
+        # 🔵 NOVA PARTE: Compactar e enviar ChromaDB + ready_flag
         logger.info("🔄 Compactando e enviando ChromaDB para o S3...")
-        compressed_file = compress_chroma_db(collection_name)
-        upload_chroma_to_s3(compressed_file)
+
+        compressed_file = None
+        ready_flag_file = 'ready_flag'
+
+        try:
+            # Compacta o ChromaDB
+            compressed_file = compress_chroma_db(collection_name)
+            
+            # Faz upload do ChromaDB compactado
+            s3 = boto3.client('s3')
+            s3.upload_file(compressed_file, config.S3_BUCKET_CHROMADB, compressed_file)
+
+            # Verifica upload
+            if verify_upload(config.S3_BUCKET_CHROMADB, compressed_file):
+                logger.info("✅ Upload do ChromaDB verificado com sucesso!")
+            else:
+                logger.error("❌ Falha na verificação do upload do ChromaDB.")
+                raise Exception("Falha na verificação de upload.")
+
+            # Cria o arquivo ready_flag
+            with open(ready_flag_file, 'w') as f:
+                f.write('ready')
+
+            # Faz upload do ready_flag
+            s3.upload_file(ready_flag_file, config.S3_BUCKET_CHROMADB, ready_flag_file)
+
+            # Verifica upload do ready_flag
+            if verify_upload(config.S3_BUCKET_CHROMADB, ready_flag_file):
+                logger.info("✅ Upload do ready_flag verificado com sucesso!")
+            else:
+                logger.error("❌ Falha na verificação do upload do ready_flag.")
+                raise Exception("Falha na verificação de upload do ready_flag.")
+
+            logger.info("✅ ChromaDB e ready_flag enviados para S3 com sucesso!")
+
+        except Exception as e:
+            logger.error(f"❌ Falha ao enviar ChromaDB ou ready_flag para o S3: {str(e)}")
+            raise
+
+        finally:
+            # Limpa arquivos temporários
+            if compressed_file and os.path.exists(compressed_file):
+                os.remove(compressed_file)
+            if os.path.exists(ready_flag_file):
+                os.remove(ready_flag_file)
+            logger.info("🧹 Arquivos temporários removidos.")
 
     except Exception as e:
         logger.error(f"🔥 Falha crítica: {str(e)}")

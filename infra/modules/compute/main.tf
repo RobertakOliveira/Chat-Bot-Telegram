@@ -107,6 +107,14 @@ resource "aws_iam_role_policy" "chatbot_policy" {
         ]
       },
       {
+        Action   = ["s3:GetObject", "s3:ListBucket"],
+        Effect   = "Allow",
+        Resource = [
+          "arn:aws:s3:::${var.chroma_bucket_name}",
+          "arn:aws:s3:::${var.chroma_bucket_name}/*"
+        ]
+      },
+      {
         Action   = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
@@ -142,7 +150,6 @@ resource "aws_instance" "chatbot_server" {
   vpc_security_group_ids = [aws_security_group.chatbot_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.chatbot_profile.name
   
-  # 🛠️ Novo user_data para baixar o ChromaDB
   user_data = base64encode(<<-EOF
               #!/bin/bash
               # Configuração inicial do Docker...
@@ -150,12 +157,15 @@ resource "aws_instance" "chatbot_server" {
               # Espera até que o ChromaDB esteja pronto (máx. 10 tentativas)
               for i in {1..10}; do
                 if aws s3 ls s3://${var.chroma_bucket_name}/ready_flag; then
+                  echo "ChromaDB pronto, baixando..."
                   aws s3 cp s3://${var.chroma_bucket_name}/chroma_db.tar.gz /tmp/
                   mkdir -p /opt/chatbot/data/
                   tar -xzvf /tmp/chroma_db.tar.gz -C /opt/chatbot/data/
                   break
+                else
+                  echo "Aguardando ChromaDB... (tentativa $i/10)"
+                  sleep 30
                 fi
-                sleep 30
               done
 
               # Inicia a aplicação normalmente...
