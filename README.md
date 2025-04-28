@@ -45,21 +45,23 @@ A aplicação é Dockerizada e pode ser subida para a AWS com uso de Terraform.
     terraform apply
     ```
   
-  4. Mova de volta para o diretório raiz (onde estiver o repositório). Crie o arquivo `.env`, com base em `.env.example`:
+  4. Se as mudanças foram corretamente aplicadas, deve ter sido criado um bucket em sua conta AWS com o nome especificado. Faça upload dos documentos jurídicos desejados para ele.
+  
+  5. Mova de volta para o diretório raiz (onde estiver o repositório). Crie o arquivo `.env`, com base em `.env.example`:
   
       ```bash
       cp .env.example .env
       ```
       Preencha o arquivo `.env` gerado com as informações desejadas. Faça uso do que desejar do exemplo.
 
-  5. Copie o código para a EC2:
+  6. Copie o código para a EC2:
 
       ```bash 
       rsync -avrz -e "ssh -i <CAMINHO_ARQUIVO_PEM>" <CAMINHO_DIRETORIO_ATUAL> ec2-user@<IP_PUBLICO_DA_EC2>:/home/ec2-user/api/ --exclude-from=copy-ignore.txt
       ```
       > Obs.: Troque os valores entre '<' e '>' pelos dados correspondentes.
     
-  6. Por último, entre na EC2 com SSH e vá para /api/:
+  7. Por último, entre na EC2 com SSH e vá para /api/:
       ```bash 
       ssh -i "<CAMINHO_ARQUIVO_PEM>" ec2-user@<IP_PUBLICO_DA_EC2>
       ```
