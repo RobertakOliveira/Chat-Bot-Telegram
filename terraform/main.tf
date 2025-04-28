@@ -29,11 +29,3 @@ module "ec2" {
     key_name = var.key_name
     ssh_ip = var.ssh_ip
 }
-
-module "ecr" {
-    source = "./ecr" 
-}
-
-output "ecr_url" {
-    value = module.ecr.ecr_repository_url
-}
