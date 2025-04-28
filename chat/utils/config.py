@@ -22,10 +22,16 @@ from typing import Any
 from botocore.exceptions import ClientError, NoCredentialsError
 from chat.utils.logger import get_logger
 
+from pathlib import Path # Para manipulação de caminhos de forma multiplataforma
+from dotenv import load_dotenv # Para carregar variáveis de um arquivo .env
+env_path = Path(__file__).resolve().parent.parent / ".env"
+# Carrega as variáveis de ambiente do arquivo .env encontrado no caminho especificado
+load_dotenv(dotenv_path=env_path)
+
 # =============================================
 #        INSIRA SEU NOME DE USUÁRIO AQUI
 # =============================================
-USER = "kat"
+USER = os.getenv("USER_NAME")
 
 logger = get_logger("config")
 try:
