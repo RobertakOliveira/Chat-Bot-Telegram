@@ -6,8 +6,8 @@ import time
 import random
 import tarfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
 import boto3  # <-- Novo import necessário
+import botocore  # <-- Novo import para tratamento de exceções
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
@@ -47,12 +47,36 @@ def verify_upload(bucket, key):
         logger.error(f"Erro na verificação de upload para {key}: {str(e)}")
     return False
 
+# Função para esperar o bucket ficar disponível
+def wait_for_bucket(s3_client, bucket_name, timeout_seconds=30):
+    """Espera até o bucket S3 estar disponível, ou dá timeout."""
+    start_time = time.time()
+    while True:
+        try:
+            s3_client.head_bucket(Bucket=bucket_name)
+            print(f"✅ Bucket '{bucket_name}' encontrado!")
+            return
+        except botocore.exceptions.ClientError as e:
+            error_code = int(e.response['Error']['Code'])
+            if error_code == 404:
+                # Bucket não existe ainda
+                if time.time() - start_time > timeout_seconds:
+                    raise Exception(f"⏰ Timeout: Bucket '{bucket_name}' não disponível após {timeout_seconds} segundos.")
+                print(f"⌛ Aguardando bucket '{bucket_name}' ficar pronto...")
+                time.sleep(3)  # Espera 3 segundos e tenta de novo
+            else:
+                # Outro erro, melhor relançar
+                raise
+
 def ingest_pdfs(bucket_name: str, collection_name: str):
     """Processa todos os PDFs do bucket S3 e indexa no ChromaDB."""
     logger.info(f"🚀 Iniciando ingestão do bucket: {bucket_name}")
     start_total = time.time()
 
     try:
+        # Espera o bucket ficar disponível
+        wait_for_bucket(boto3.client('s3'), bucket_name)
+
         pdf_files = list_pdfs_in_bucket(bucket_name)
         logger.info(f"📄 Total de PDFs encontrados: {len(pdf_files)}")
 
