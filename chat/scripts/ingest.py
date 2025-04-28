@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import random
 import tarfile
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))  
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from chat.core.pdf_processing import process_pdf_from_s3, list_pdfs_in_bucket
 from chat.core.vector_store import initialize_chroma_instance
@@ -93,5 +93,4 @@ if __name__ == "__main__":
     logger.info("🛠️ Iniciando ingestão de PDFs...")
     collection_name = generate_collection_name()
     print(f"Nome da coleção gerado: {collection_name}")
-    PDF_BUCKET = os.getenv('PDF_BUCKET')
-    ingest_pdfs(PDF_BUCKET, collection_name)
+    ingest_pdfs(config.S3_BUCKET_NAME, collection_name)
