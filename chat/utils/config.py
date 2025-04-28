@@ -25,7 +25,7 @@ from chat.utils.logger import get_logger
 # =============================================
 #        INSIRA SEU NOME DE USUÁRIO AQUI
 # =============================================
-USER = "talita"
+USER = "kat"
 
 logger = get_logger("config")
 try:

@@ -23,13 +23,13 @@ resource "random_id" "bucket_suffix" {
 # S3 BUCKET PARA DOCUMENTOS
 # =============================================
 resource "aws_s3_bucket" "docs" {
-  bucket = lower("chatbot-docs-${var.owner_tag}-${random_id.bucket_suffix.hex}")
+  bucket = lower("consultor-juridico-${var.owner_tag}")  # Nome do bucket para documentos
   force_destroy = false
 
   tags = merge(
     var.common_tags,
     {
-      Name        = "chatbot-docs-${var.owner_tag}"
+      Name        = "consultor-juridico-${var.owner_tag}" # Nome da bucket
       Component   = "storage"
       Sensitivity = "high"
       Compliance  = "confidencial"
@@ -140,12 +140,12 @@ resource "aws_s3_bucket_policy" "docs_access" {
 # =============================================
 
 resource "aws_s3_bucket" "chromadb" {
-  bucket = lower("chatbot-chromadb-${var.owner_tag}-${random_id.bucket_suffix.hex}")
+  bucket = lower("consultor-juridico-chromadb-${var.owner_tag}")  # Nome do bucket para ChromaDB
   force_destroy = false
   tags = merge(
     var.common_tags,
     {
-      Name        = "chatbot-chromadb-${var.owner_tag}"
+      Name        = "consultor-juridico-chromadb-${var.owner_tag}"
       Component   = "vector-store"
       Sensitivity = "high"
     }

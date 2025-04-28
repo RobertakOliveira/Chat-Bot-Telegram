@@ -30,7 +30,7 @@ variable "environment" {
 variable "bucket_name_prefix" {
   description = "Prefixo para nomes de buckets (será combinado com owner_tag e random suffix)"
   type        = string
-  default     = "chatbot-docs"
+  default     = "consultor-juridico" # Prefixo padrão para os buckets
 }
 
 # Variáveis para habilitar o logging de acesso e configurar o bucket de logs
