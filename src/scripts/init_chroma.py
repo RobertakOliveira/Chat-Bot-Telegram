@@ -12,12 +12,15 @@ import logging
 import argparse
 import json
 from dotenv import load_dotenv
+import sys
 
-from src.config import Config
-from src.services.s3_service import S3Service
-from src.services.indexing.embedding_service import EmbeddingService
-from src.services.indexing.document_loader_service import DocumentService
-from src.repository.chromaDB_repo import ChromaRepository
+sys.path.insert(0, './src/')
+from config import Config
+from services.s3_service import S3Service
+from services.indexing.embedding_service import EmbeddingService
+from services.indexing.document_loader_service import DocumentService
+from repository.chromaDB_repo import ChromaRepository
+
 
 # Configuração de logging
 logging.basicConfig(
@@ -43,7 +46,7 @@ def load_chroma_db(filter_patterns=None, force_reload=False):
     
     try:
         # Carrega variáveis de ambiente se não estiverem carregadas
-        load_dotenv(override=True)
+        # load_dotenv(override=True)
         
         # Validação de configurações
         Config.validate()
