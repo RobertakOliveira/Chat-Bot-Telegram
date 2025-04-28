@@ -17,11 +17,11 @@ services:
       dockerfile: ./dockerfiles/chatbotapi/dockerfile
       context: .
     volumes:
-      - ./src/:/src/
       - ./shared/:/shared/
     ports:
       - 3000:3000
     networks:
       - chatbotnetwork
+    env_file: .env
 networks:
   chatbotnetwork:
