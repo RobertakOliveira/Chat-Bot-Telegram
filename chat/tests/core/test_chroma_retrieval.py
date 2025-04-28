@@ -15,7 +15,18 @@ logger = get_logger("test_chroma_retrieval")
 TEST_QUERIES = {
     "Agravo": [
         "Qual o prazo para interposição de agravo de instrumento?",
-        "Quais os requisitos para cabimento de agravo interno?"
+        "Quais os requisitos para cabimento de agravo interno?",
+        "Quem é o remetente deste agravo?",
+        "Qual o número do processo associado a este agravo?",
+        "Contra qual decisão este agravo está sendo interposto?",
+        "A qual instância superior este agravo é direcionado?",
+        "Qual o fundamento legal para a interposição deste agravo?",
+        "Em que data foi elaborado este agravo?",
+        "Quem é o advogado que assina este agravo?",
+        "Qual o número da OAB do advogado?",
+        "O agravante alega qual tipo de violação constitucional?",
+        "O que o agravante alega sobre a intimação para o julgamento do recurso de apelação?",
+        "Quais são os pedidos do agravante neste documento?"
     ],
     "Recurso Extraordinario": [
         "Como fundamentar um recurso extraordinário com base no art. 102 da CF?",

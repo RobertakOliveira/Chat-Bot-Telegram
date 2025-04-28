@@ -11,13 +11,7 @@ logger = get_logger("test_pdfs")
 logger.setLevel(logging.DEBUG)
 
 
-def test_single_pdf():
-    # Teste com um PDF específico
-    bucket = "consultor-juridico"  # Substitua pelo seu bucket S3
-    # Substitua por um arquivo real 16-acordao-recorrido.pdf
-    key = "juridicos/16-acordao-recorrido.pdf"
-    output_file = "single_pdf_chunks.txt"
-
+def test_single_pdf(bucket, key, output_file="single_pdf_chunks.txt"):
     # Processa o PDF
     documents = process_pdf_from_s3(bucket, key)
 
@@ -30,16 +24,16 @@ def test_single_pdf():
         )
     )
 
-    # Grava todos os chunks em um arquivo .txt
+    # Grava os chunks e metadados no arquivo de texto
     with open(output_file, "w", encoding="utf-8") as f:
-        f.write(f"PDF: {key}\n")
-        f.write(f"Total de chunks gerados: {len(documents)}\n\n")
-        for idx, doc in enumerate(documents, start=1):
-            f.write(f"=== Chunk {idx} ===\n")
-            f.write(f"Metadados: {doc.metadata}\n")
-            f.write("Conteúdo:\n")
-            f.write(doc.page_content)
-            f.write("\n\n")
+        for doc in documents:
+            # Combine metadados e conteúdo em um único dicionário
+            data_to_write = {
+                "page_content": doc.page_content,
+                "metadata": doc.metadata
+            }
+            # Escreve o dicionário como uma única linha JSON
+            f.write(json.dumps(data_to_write, ensure_ascii=False) + "\n")
 
     print(f"🔍 Saída gravada em {output_file}")
 
@@ -121,7 +115,16 @@ def test_local_pdf_page_count():
 
 if __name__ == "__main__":
     logger.info("=== TESTE DE PDF ÚNICO ===")
-    test_single_pdf()
+
+    # Configurações para o PDF que você quer testar
+    bucket = "consultor-juridico-talita"  # Substitua pelo seu bucket S3
+    # Substitua pela chave do seu PDF
+    key = "juridicos/ARE1467492/agravo/38-agravo.pdf"
+    output_file = "chunks_38_agravo.txt"  # Nome do arquivo de saída
+
+    test_single_pdf(bucket, key, output_file)
+
+    # test_local_pdf_page_count() # Você pode manter ou comentar este teste
 
     # logger.info("\n=== TESTE DE PDF ÚNICO COM CONTAGEM DE PÁGINAS ===")
     # test_local_pdf_page_count()

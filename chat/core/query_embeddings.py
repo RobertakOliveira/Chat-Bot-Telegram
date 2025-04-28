@@ -19,7 +19,7 @@ class BedrockEmbeddingSingleton:
         if cls._instance is None:
             cls._instance = BedrockEmbeddings(
                 client=bedrock_runtime,
-                model_id=bedrock_config.MODEL_ID,
+                model_id=bedrock_config.BEDROCK_EMBEDDING_MODEL_ID,
                 region_name=AWS_REGION
             )
         return cls._instance

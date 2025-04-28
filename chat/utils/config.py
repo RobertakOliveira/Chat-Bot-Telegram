@@ -63,10 +63,15 @@ class ConfigLoader:
             ),
 
             # Configurações do Bedrock
-            "BEDROCK_MODEL_ID": self._get_param_with_fallback(
-                "/chatbot-juridico/bedrock-model-id",
-                "BEDROCK_MODEL_ID",
+            "BEDROCK_EMBEDDING_MODEL_ID": self._get_param_with_fallback(
+                "/chatbot-juridico/bedrock-embedding-model-id",
+                "BEDROCK_EMBEDDING_MODEL_ID",
                 "amazon.titan-embed-text-v2:0"
+            ),
+            "BEDROCK_QUERY_MODEL_ID": self._get_param_with_fallback(
+                "/chatbot-juridico/bedrock-query-model-id",
+                "BEDROCK_QUERY_MODEL_ID",
+                "amazon.nova-pro-v1:0"
             ),
             "BEDROCK_BATCH_SIZE": int(
                 self._get_param_with_fallback(
@@ -307,9 +312,14 @@ class BedrockConfig:
     """Configurações especializadas para Bedrock"""
 
     @property
-    def MODEL_ID(self) -> str:
+    def BEDROCK_EMBEDDING_MODEL_ID(self) -> str:
         """str: ID do modelo fundacional da Bedrock a ser utilizado."""
-        return config.BEDROCK_MODEL_ID
+        return config.BEDROCK_EMBEDDING_MODEL_ID
+
+    @property
+    def BEDROCK_QUERY_MODEL_ID(self) -> str:
+        """str: ID do modelo de consulta da Bedrock a ser utilizado."""
+        return config.BEDROCK_QUERY_MODEL_ID
 
     @property
     def MAX_TOKENS(self) -> int:
@@ -364,7 +374,9 @@ if __name__ == "__main__":
     logger.info(f"- Log Group: {config.LOG_GROUP}")
 
     logger.info("\n=== 🪨  Bedrock === ")
-    logger.info(f"- Model ID: {bedrock_config.MODEL_ID}")
+    logger.info(
+        f"- Embedding Model ID: {bedrock_config.BEDROCK_EMBEDDING_MODEL_ID}")
+    logger.info(f"- Query Model ID: {bedrock_config.BEDROCK_QUERY_MODEL_ID}")
     logger.info(f"- Batch Size: {bedrock_config.BATCH_SIZE}")
     logger.info(f"- Max Retries: {bedrock_config.MAX_RETRIES}")
     logger.info(f"- Batch Delay: {bedrock_config.BATCH_DELAY}s")
