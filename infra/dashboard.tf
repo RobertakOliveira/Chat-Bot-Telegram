@@ -41,7 +41,7 @@ resource "aws_cloudwatch_dashboard" "chatbot_dashboard" {                     //
           title = "Network In/Out", //titulo do widget
           metrics = [
             ["AWS/EC2", "NetworkIn", "InstanceId", var.instance_id],
-            [".", "NetworkOut", ".", "."]
+            ["AWS/EC2", "NetworkOut", "InstanceId", var.instance_id] # Nesta linha, o InstanceId é o mesmo do NetworkIn
           ],
           period = 300, //5 minutos para atualizar
           stat   = "Sum",

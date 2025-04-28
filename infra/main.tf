@@ -41,9 +41,9 @@ resource "null_resource" "generate_chromadb" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      python3 ./chat/scripts/ingest.py && 
-      aws s3 cp ./chroma_db.tar.gz s3://${module.storage.chroma_bucket_name}/ && 
-      aws s3 cp ./ready_flag s3://${module.storage.chroma_bucket_name}/ready_flag
+      python3 ./chat/scripts/ingest.py
+      aws s3 cp ./chroma_db.tar.gz s3://${module.storage.chroma_db_bucket_name}
+      aws s3 cp ./ready_flag s3://${module.storage.chroma_db_bucket_name}/ready_flag
     EOT
     environment = {
       PDF_BUCKET = module.storage.docs_bucket_name

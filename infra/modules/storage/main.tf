@@ -288,9 +288,9 @@ output "docs_bucket_arn" {
   value       = aws_s3_bucket.docs.arn
 }
 
-output "chroma_bucket_name" {
+output "chroma_db_bucket_name" {
   description = "Nome do bucket para ChromaDB"
-  value       = aws_s3_bucket.chromadb.id
+  value       = aws_s3_bucket.chromadb.id  
 }
 
 output "dynamodb_lock_table" {
