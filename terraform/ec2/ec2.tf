@@ -1,9 +1,43 @@
+# VARS ---------------------------------------------------------------------
+
+variable "key_name" {
+    description = "Key to connect to instance via SSH."
+    type = string
+}
+
+variable "ssh_ip" {
+    description = "IP to allow for SSH connections to the EC2 instance."
+    type = string
+}
+
+# IAM ROLES ----------------------------------------------------------------
+
+resource "aws_iam_role" "ec2-role" {
+  name = "chatbot_ec2_role"
+  assume_role_policy = file("./ec2/ec2-role.json")
+}
+
+resource "aws_iam_instance_profile" "ec2-profile" {
+  name = "chatbot_ec2_profile"
+  role = aws_iam_role.ec2-role.name  
+}
+
+resource "aws_iam_role_policy" "ec2-role-policy" {
+  name = "chatbot_ec2_policy"
+  role = aws_iam_role.ec2-role.id
+  policy = file("./ec2/ec2-policy.json")
+}
+
 # INSTANCE -----------------------------------------------------------------
 
 resource "aws_instance" "ec2" {
   ami = "ami-00a929b66ed6e0de6" # Amazon Linux 2023 AMI
   instance_type = "t2.micro"
   associate_public_ip_address = true
+
+  key_name = var.key_name
+
+  iam_instance_profile = aws_iam_instance_profile.ec2-profile.name
 
   tags = {
     "Project" = ""
@@ -18,7 +52,7 @@ resource "aws_instance" "ec2" {
   }
 
   user_data = file("./ec2/start-script.sh")
-  security_groups = [aws_security_group.ec2_sg.id]
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
   subnet_id = aws_subnet.chatbot_public_subnet.id
 }
 
@@ -95,13 +129,21 @@ resource "aws_vpc_security_group_ingress_rule" "allow_http_ir" {
     to_port = 80
 }
 
-resource "aws_vpc_security_group_ingress_rule" "allow_ssh_ir" {
+resource "aws_vpc_security_group_ingress_rule" "allow_ssh_ip_ir" {
     security_group_id = aws_security_group.ec2_sg.id
     ip_protocol = "tcp"
+    cidr_ipv4 = var.ssh_ip
     from_port = 22
     to_port = 22
-    referenced_security_group_id = aws_security_group.ec2_sg.id # needed to allow EC2 endpoint connection
 }
+
+#resource "aws_vpc_security_group_ingress_rule" "allow_ssh_sg_ir" {
+#    security_group_id = aws_security_group.ec2_sg.id
+#    ip_protocol = "tcp"
+#    from_port = 22
+#    to_port = 22
+#    referenced_security_group_id = aws_security_group.ec2_sg.id # needed to allow EC2 endpoint connection
+#}
 
 resource "aws_vpc_security_group_egress_rule" "sg_er_1" {
     security_group_id = aws_security_group.ec2_sg.id
