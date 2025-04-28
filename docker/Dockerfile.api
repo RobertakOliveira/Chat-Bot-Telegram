@@ -4,16 +4,16 @@ FROM python:3.9-slim
 # Define o mesmo diretório de trabalho
 WORKDIR /app
 
-# Copia apenas a pasta app (otimização para construção em camadas)
+# Copia a pasta app
 COPY app ./app
 
-# Instala as dependências específicas da API
-RUN pip install --no-cache-dir \
-    fastapi==0.95.2 \
-    uvicorn==0.22.0 \
-    python-dotenv==1.0.0 \
-    httpx==0.24.1 \
-    psutil==5.9.5
+# Copia a pasta chat, ignorando a pasta test
+COPY chat ./chat
+RUN find ./chat -type d -name "test" -exec rm -rf {} + || true
+
+# Se você tiver um requirements.txt, pode usá-lo assim:
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Comando para iniciar a aplicação
 CMD ["uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "8080"]
