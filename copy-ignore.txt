@@ -1,0 +1,11 @@
+*/.*
+*.pem
+terraform
+venv
+.venv
+shared
+__pycache__
+bd/*
+*.egg-info
+build/*
+.git
