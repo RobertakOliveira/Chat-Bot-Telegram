@@ -23,7 +23,7 @@ module "ec2" {
   ami               = "ami-07a6f770277670015"
   instance_type     = "t2.micro"
   subnet_id         = module.vpc.public_subnet_id
-  security_group_id = module.vpc.default_security_group_id
+  security_group_id = module.vpc.security_group_id
 }
 
 # CloudWatch
