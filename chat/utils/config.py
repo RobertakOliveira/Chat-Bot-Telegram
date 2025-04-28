@@ -9,7 +9,7 @@ Funcionamento híbrido:
 3. Fallback para valores padrão otimizados
 
 Dependências:
-- AWS: Configurações no SSM (/chatbot-juridico/*)
+- AWS: Configurações no SSM (/consultor-juridico/*)
 - Local: Variáveis de ambiente ou valores padrão
 
 Prioridade de carregamento:
@@ -52,79 +52,79 @@ class ConfigLoader:
         self._config = {
             # Configurações de Infraestrutura AWS
             "S3_BUCKET_NAME": self._get_param_with_fallback(
-                "/chatbot-juridico/s3-bucket-name",
+                "/consultor-juridico/s3-bucket-name",
                 "S3_BUCKET_NAME",
                 f"consultor-juridico-{USER}"
             ),
             "LOG_GROUP": self._get_param_with_fallback(
-                "/chatbot-juridico/log-group",
+                "/consultor-juridico/log-group",
                 "LOG_GROUP",
                 "/aws/chatbot-consultor-juridico"
             ),
 
             # Configurações do Bedrock
             "BEDROCK_EMBEDDING_MODEL_ID": self._get_param_with_fallback(
-                "/chatbot-juridico/bedrock-embedding-model-id",
+                "/consultor-juridico/bedrock-embedding-model-id",
                 "BEDROCK_EMBEDDING_MODEL_ID",
                 "amazon.titan-embed-text-v2:0"
             ),
             "BEDROCK_QUERY_MODEL_ID": self._get_param_with_fallback(
-                "/chatbot-juridico/bedrock-query-model-id",
+                "/consultor-juridico/bedrock-query-model-id",
                 "BEDROCK_QUERY_MODEL_ID",
                 "amazon.nova-pro-v1:0"
             ),
             "BEDROCK_BATCH_SIZE": int(
                 self._get_param_with_fallback(
-                    "/chatbot-juridico/bedrock-batch-size",
+                    "/consultor-juridico/bedrock-batch-size",
                     "BEDROCK_BATCH_SIZE",
                     "48"
                 )),
             "BEDROCK_MAX_RETRIES": int(
                 self._get_param_with_fallback(
-                    "/chatbot-juridico/bedrock-max-retries",
+                    "/consultor-juridico/bedrock-max-retries",
                     "BEDROCK_MAX_RETRIES",
                     "3"
                 )),
             "BEDROCK_RETRY_MULTIPLIER": float(
                 self._get_param_with_fallback(
-                    "/chatbot-juridico/bedrock-retry-multiplier",
+                    "/consultor-juridico/bedrock-retry-multiplier",
                     "BEDROCK_RETRY_MULTIPLIER",
                     "1"
                 )),
             "BEDROCK_MIN_RETRY_DELAY": float(
                 self._get_param_with_fallback(
-                    "/chatbot-juridico/bedrock-min-retry-delay",
+                    "/consultor-juridico/bedrock-min-retry-delay",
                     "BEDROCK_MIN_RETRY_DELAY",
                     "2"
                 )),
             "BEDROCK_MAX_RETRY_DELAY": float(
                 self._get_param_with_fallback(
-                    "/chatbot-juridico/bedrock-max-retry-delay",
+                    "/consultor-juridico/bedrock-max-retry-delay",
                     "BEDROCK_MAX_RETRY_DELAY",
                     "10"
                 )),
             "BEDROCK_BATCH_DELAY": float(
                 self._get_param_with_fallback(
-                    "/chatbot-juridico/bedrock-batch-delay",
+                    "/consultor-juridico/bedrock-batch-delay",
                     "BEDROCK_BATCH_DELAY",
                     "0.15"
                 )),
             "BEDROCK_TEXT_TRUNCATE": int(
                 self._get_param_with_fallback(
-                    "/chatbot-juridico/bedrock-text-truncate",
+                    "/consultor-juridico/bedrock-text-truncate",
                     "BEDROCK_TEXT_TRUNCATE",
                     "7500"  # Margem de segurança para tokenização
                 )),
 
             # Configurações de ChromaDB (nova configuração)
             "CHROMA_DB_PATH": self._get_param_with_fallback(  # Diretório de persistência
-                "/chatbot-juridico/chroma-db-path",
+                "/consultor-juridico/chroma-db-path",
                 "CHROMA_DB_PATH",
                 "chroma_db"
             ),
 
             "S3_BUCKET_CHROMADB": self._get_param_with_fallback(  # Bucket para guardar o ChromaDB
-                "/chatbot-juridico/s3-bucket-chromadb",
+                "/consultor-juridico/s3-bucket-chromadb",
                 "S3_BUCKET_CHROMADB",
                 f"consultor-juridico-chromadb-{USER}"
             ),
@@ -132,34 +132,34 @@ class ConfigLoader:
             # Configurações de PDF Processing
             "CHUNK_SIZE": int(
                 self._get_param_with_fallback(
-                    "/chatbot-juridico/chunk-size",
+                    "/consultor-juridico/chunk-size",
                     "CHUNK_SIZE",
                     "1200"
                 )),
             "CHUNK_OVERLAP": int(
                 self._get_param_with_fallback(
-                    "/chatbot-juridico/chunk-overlap",
+                    "/consultor-juridico/chunk-overlap",
                     "CHUNK_OVERLAP",
                     "300"
                 )),
             "MAX_TOKENS": int(
                 self._get_param_with_fallback(
-                    "/chatbot-juridico/max-tokens",
+                    "/consultor-juridico/max-tokens",
                     "MAX_TOKENS",
                     "8000"
                 )),
             "PDF_PREFIX": self._get_param_with_fallback(
-                "/chatbot-juridico/pdf-prefix",
+                "/consultor-juridico/pdf-prefix",
                 "PDF_PREFIX",
                 "juridicos/"
             ),
             "LEGAL_SEPARATORS": self._get_param_with_fallback(
-                "/chatbot-juridico/legal-separators",
+                "/consultor-juridico/legal-separators",
                 "LEGAL_SEPARATORS",
                 "\nArtigo,\n§,\nParágrafo,\nInciso,\nAlínea,\nCAPÍTULO,\nSeção,\nI\\. ,\nII\\. ,\nIII\\. ,\nIV\\. ,\nV\\. ,\nDECIDE:,\nRELATOR:,\nAGRAVO,\nRECURSO,\n\n,\n, "
             ),
             "LEGAL_IGNORE_PATTERNS": self._get_param_with_fallback(
-                "/chatbot-juridico/legal-ignore-patterns",
+                "/consultor-juridico/legal-ignore-patterns",
                 "LEGAL_IGNORE_PATTERNS",
                 r"Documento assinado digitalmente,"
                 r"Fl\. \d+,"
@@ -172,7 +172,7 @@ class ConfigLoader:
                 r"^\s*[\W\d]{1,3}\s*$"
             ),
             "LEGAL_PRESERVE_PATTERNS": self._get_param_with_fallback(
-                "/chatbot-juridico/legal-preserve-patterns",
+                "/consultor-juridico/legal-preserve-patterns",
                 "LEGAL_PRESERVE_PATTERNS",
                 r"Art(?:igo)?\.?\s*\d+º.*?(?=\n|$),"
                 r"§\s?\d+º.*?(?=\n|$),"
@@ -189,7 +189,7 @@ class ConfigLoader:
             ),
             "MIN_VALID_CHUNK_LINES": int(
                 self._get_param_with_fallback(
-                    "/chatbot-juridico/min-valid-chunk-lines",
+                    "/consultor-juridico/min-valid-chunk-lines",
                     "MIN_VALID_CHUNK_LINES",
                     "3"
                 ))
