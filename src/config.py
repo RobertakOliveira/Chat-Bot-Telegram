@@ -12,7 +12,7 @@ logging.basicConfig(
 logger = logging.getLogger("config")
 
 # Carrega as variáveis de ambiente do arquivo .env
-load_dotenv(override=True)
+# load_dotenv(override=True)
 
 class Config:
     # Configurações S3
@@ -56,8 +56,9 @@ class Config:
         """
         Cria uma sessão AWS usando perfil se disponível, senão usa credenciais padrão
         """
+
         try:
-            if cls.AWS_PROFILE:
+            if cls.AWS_PROFILE and len(cls.AWS_PROFILE) != 0:
                 logger.info(f"Usando perfil AWS: {cls.AWS_PROFILE}")
                 return boto3.Session(profile_name=cls.AWS_PROFILE)
             else:
