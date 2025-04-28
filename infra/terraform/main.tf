@@ -1,7 +1,6 @@
 # VPC
 module "vpc" {
-  source = "./modules/vpc"
-  
+  source     = "./modules/vpc"
   cidr_block = "10.0.0.0/16"
   vpc_name   = "${var.project}-vpc"
 }
@@ -13,7 +12,6 @@ module "s3" {
   bucket_tag_name    = "grupo1ChatbotDocuments"
   project            = var.project
   cost_center        = var.cost_center
-
   dataset_path       = "${path.root}/../../dataset/juridicos.zip"
 }
 
@@ -28,9 +26,8 @@ module "ec2" {
 
 # CloudWatch
 module "cloudwatch" {
-  source = "./modules/cloudwatch"
-  
-  log_group_name   = "/aws/chatbot/legal-documents"
+  source            = "./modules/cloudwatch"
+  log_group_name    = "/aws/chatbot/legal-documents"
   retention_in_days = 7
 }
 
