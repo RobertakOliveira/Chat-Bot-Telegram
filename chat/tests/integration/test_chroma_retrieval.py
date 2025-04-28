@@ -5,12 +5,30 @@ from rich.console import Console
 from rich.table import Table
 from rich import box
 from rich.panel import Panel
+from dataclasses import dataclass, field
+from typing import Dict, List
 from chat.core.query_processing import preprocess_query
 from chat.utils.logger import get_logger
 from chat.utils.config import config
 
 console = Console()
 logger = get_logger("test_chroma_retrieval")
+
+
+@dataclass
+class MockSession:
+    user_id: str = "test_user"
+    chat_history: List[Dict] = field(default_factory=list)
+
+    def add_message(self, message: str, is_user: bool = True) -> None:
+        """Implementação mockada do método add_message"""
+        msg_type = "user" if is_user else "assistant"
+        self.chat_history.append({
+            "type": msg_type,
+            # Mantém consistência com a implementação real
+            "message": message[:2000]
+        })
+
 
 TEST_QUERIES = {
     "Agravo": [
@@ -69,6 +87,7 @@ def display_results(query: str, results: dict):
 def run_query_tests(collection):
     total_success = 0
     total_failures = 0
+    session = MockSession()  # Cria sessão mockada
 
     for doc_type, queries in TEST_QUERIES.items():
         console.rule(f"[bold blue]🔍 TESTANDO TIPO: {doc_type}")
@@ -81,8 +100,8 @@ def run_query_tests(collection):
 
         for query in queries:
             try:
-                processed = preprocess_query(query)
-                detected_type = processed["document_type"] or "Não detectado"
+                processed = preprocess_query(query, session)
+                detected_type = processed["doc_type"] or "Não detectado"
 
                 results = collection.query(
                     query_embeddings=[processed["embedding"]],
@@ -114,6 +133,10 @@ def run_query_tests(collection):
         f"🔍 Total de perguntas testadas: [bold blue]{total_success + total_failures}")
 
 
+# Hardcoded Collection Name:
+# collection_85283 está fixo no código. Sugiro usar:
+# collection = chroma_client.get_collection(name=config.CHROMA_COLLECTION_NAME)
+
 def main():
     try:
         chroma_client = chromadb.PersistentClient(path=config.CHROMA_DB_PATH)
@@ -143,4 +166,4 @@ if __name__ == "__main__":
     main()
 
 # Navegue até a pasta raiz e execute:
-#     python -m chat.tests.core.test_chroma_retrieval
+#     python -m chat.tests.integration.test_chroma_retrieval

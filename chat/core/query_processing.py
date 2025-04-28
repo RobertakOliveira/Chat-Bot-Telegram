@@ -16,7 +16,7 @@
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, Optional, List
 from botocore.exceptions import ClientError
 
@@ -32,16 +32,33 @@ logger = get_logger("query_processing")
 class UserSession:
     """Contêiner para manter o estado isolado por usuário"""
     user_id: str
-    chat_history: List[Dict] = None
+    chat_history: List[Dict] = field(default_factory=list)
 
     def add_message(self, message: str, is_user: bool = True) -> None:
         """Adiciona mensagem ao histórico mantendo contexto"""
         msg_type = "user" if is_user else "assistant"
         self.chat_history = self.chat_history or []
         self.chat_history.append({
-            "type": msg_type,
+            "role": msg_type,
             "message": message[:2000]
         })  # Limita tamanho
+
+        # Adicionar log para verificação
+        logger.info(
+            f"1 - Mensagem adicionada ao histórico: {message[:100]}...")
+
+    def get_history(self) -> List[Dict]:
+        """Retorna o histórico de mensagens"""
+        return self.chat_history
+
+    def get_history_text(self) -> str:
+        """Retorna o histórico de mensagens como uma string de texto"""
+        history_text = ""
+        for message in self.chat_history:
+            role = message['role']
+            msg = message['message']
+            history_text += f"{role.capitalize()}: {msg}\n"
+        return history_text
 
 
 def invoke_nova_pro_rag_preprocess(prompt: str, session: UserSession, system_message: Optional[str] = None) -> str:
@@ -66,10 +83,10 @@ def invoke_nova_pro_rag_preprocess(prompt: str, session: UserSession, system_mes
         # 1. Construir o payload específico para o Amazon Nova Pro
         messages = [
             {
-                "role": "user" if msg["type"] == "user" else "assistant",
+                "role": "user" if msg["role"] == "user" else "assistant",
                 "content": [{"text": msg["message"]}]
             }
-            for msg in (session.chat_history[-3:] if session.chat_history else [])
+            for msg in session.chat_history
         ]
         messages.append({
             "role": "user",
@@ -126,6 +143,19 @@ def classify_query(query: str, session: UserSession) -> Dict:
     """Classifica a pergunta em tipo documental e intenção."""
     system_msg = """Você é um classificador especializado em documentos judiciais. 
     Responda APENAS com JSON contendo 'doc_type' e 'intent'."""
+    # Inclui o histórico de mensagens no prompt, além da pergunta atual
+    messages = []
+    for msg in session.chat_history:
+        messages.append({
+            "role": msg["role"],  # Pode ser "user" ou "assistant"
+            "content": [{"text": msg["message"]}]
+        })
+
+    # Adiciona a pergunta atual no final
+    messages.append({
+        "role": "user",  # Pergunta mais recente é do usuário
+        "content": [{"text": query}]
+    })
 
     prompt = f"""
     Classifique a pergunta jurídica abaixo APENAS com os valores permitidos:
@@ -157,8 +187,9 @@ def classify_query(query: str, session: UserSession) -> Dict:
                 "intent": result.get("intent", "outro")
             }
         return {"doc_type": "outro", "intent": "outro"}
-    except Exception:
-        logger.warning(" ⚠️ Falha na classificação, retornando valores padrão")
+    except Exception as e:
+        logger.info(
+            " ⚠️ Falha na classificação, retornando valores padrão: {str(e)}", exc_info=True)
         return {"doc_type": "outro", "intent": "outro"}
 
 
@@ -168,7 +199,19 @@ def refine_query(query: str, doc_type: str, session: UserSession) -> str:
         return query
 
     system_msg = "Você é um assistente para reformulação de consultas jurídicas. Responda APENAS com a pergunta refinada."
+    # Inclui o histórico de mensagens no prompt, além da pergunta atual
+    messages = []
+    for msg in session.chat_history:
+        messages.append({
+            "role": msg["role"],  # Pode ser "user" ou "assistant"
+            "content": [{"text": msg["message"]}]
+        })
 
+    # Adiciona a pergunta atual no final
+    messages.append({
+        "role": "user",  # Pergunta mais recente é do usuário
+        "content": [{"text": query}]
+    })
     prompt = f"""
     Reformule esta pergunta para busca em documentos jurídicos do tipo '{doc_type}'.
     - Adicione termos técnicos jurídicos
@@ -182,7 +225,7 @@ def refine_query(query: str, doc_type: str, session: UserSession) -> str:
             prompt, session, system_message=system_msg)
         return refined_text.strip() if refined_text else query
     except Exception:
-        logger.warning(" ⚠️ Falha no refinamento, retornando query original")
+        logger.info(" ⚠️ Falha no refinamento, retornando query original")
         return query
 
 
@@ -202,9 +245,16 @@ def preprocess_query(user_query: str, session: UserSession) -> Dict:
     Returns:
         - dict: Resposta do modelo com a classificação da pergunta e geração de embedding."""
     try:
+        # Extrair histórico de mensagens como texto
+        history_text = "\n".join([msg["message"]
+                                 for msg in session.get_history()])
 
-        # Registrar a nova mensagem
-        session.add_message(user_query)
+        # Recupere o histórico completo, incluindo perguntas e respostas anteriores
+        history_text = session.get_history_text()
+
+        # Adicionar log de depuração
+        logger.info(
+            f"Histórico após adicionar a pergunta: {history_text}")
 
         # 1. Classificação
         classification = classify_query(user_query, session)
@@ -212,6 +262,11 @@ def preprocess_query(user_query: str, session: UserSession) -> Dict:
         # 2. Refinamento condicional
         doc_type = classification["doc_type"]
         refined_query = refine_query(user_query, doc_type, session)
+
+        # *** AQUI ADICIONA A PERGUNTA REFINADA AO HISTÓRICO ***
+        session.add_message(refined_query)
+        logger.info(
+            f"2- Pergunta refinada adicionada ao histórico: {refined_query}")
 
         # 5. Preparar saída
         return {
