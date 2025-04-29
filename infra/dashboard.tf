@@ -101,7 +101,7 @@ resource "aws_cloudwatch_metric_alarm" "high_cpu" {
   alarm_description   = "Alerta: CPU acima de 80% por 5 minutos"
 
   dimensions = {
-    InstanceId = var.instance_id
+    InstanceId = module.compute.instance_id
   }
 
   tags = {
