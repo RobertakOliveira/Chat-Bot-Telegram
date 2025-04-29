@@ -1,6 +1,12 @@
 import time
 import logging
 import uuid
+import os
+import sys
+
+# Adiciona o diretório raiz ao PYTHONPATH
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+
 from langchain_core.callbacks import CallbackManager, StdOutCallbackHandler
 from langchain_core.tracers import ConsoleCallbackHandler
 
