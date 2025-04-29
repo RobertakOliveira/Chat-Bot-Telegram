@@ -5,7 +5,17 @@ COPY requirements.txt requirements.txt
 
 RUN pip install -r requirements.txt
 
+
+# Copiando o código fonte
+COPY src/ /src/
+
+# Convertendo terminadores de linha e garantindo permissões
+RUN apt-get update && \
+    apt-get install -y dos2unix && \
+    dos2unix /src/scripts/entrypoint.sh && \
+    chmod +x /src/scripts/entrypoint.sh
+
+
 EXPOSE 3000
 
-COPY src/ src/
-ENTRYPOINT [ "src/scripts/entrypoint.sh" ]
+ENTRYPOINT ["src/scripts/entrypoint.sh"]
