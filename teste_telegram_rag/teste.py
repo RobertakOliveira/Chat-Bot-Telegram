@@ -45,7 +45,7 @@ def lambda_handler(event, context):
     #FIm telegram, começo rag
 
     # 1. Define bucket e pasta local
-    bucket_name = "bucketembeddingssprint777"
+    bucket_name = "bucketembeddingssprint77" #lembrar de mudar sempre pra bucket própria, ...7 Caio, ...77 Bernardo, ...777 Moisés
     prefix = "chroma_db/"
     persist_directory = "/temp/chroma_db"
 
@@ -80,7 +80,8 @@ def lambda_handler(event, context):
         "- Utilize linguagem formal, precisa e estritamente técnica, conforme o padrão jurídico.\n"
         "- Fundamente suas respostas com base nos documentos, citando os trechos relevantes de maneira integrada ao texto.\n"
         "- Se a informação necessária não estiver presente ou for insuficiente, declare expressamente a limitação, sem tentar supor ou inferir dados ausentes.\n"
-        "- Estruture a resposta de forma clara, coesa e organizada, utilizando parágrafos bem desenvolvidos.\n\n"
+        "- Estruture a resposta de forma clara, coesa e organizada, utilizando parágrafos bem desenvolvidos.\n"
+        "- Se a informação necessária não estiver presente ou for insuficiente, declare expressamente a limitação, sem tentar supor ou inferir dados ausentes.\n\n"
         "Formato da tarefa:\n"
         "- Introdução breve contextualizando o tema da pergunta (se aplicável).\n"
         "- Análise fundamentada com base nos documentos fornecidos.\n"
