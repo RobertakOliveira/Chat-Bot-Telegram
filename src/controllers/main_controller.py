@@ -31,7 +31,7 @@ embedding_service = EmbeddingService(
 chroma_repository = ChromaRepository(
     embedding_function=embedding_service.get_embeddings(),
     collection_name=Config.CHROMA_COLLECTION,
-    chroma_path=Config.CHROMA_LOCAL_PATH
+    chroma_path="../"+Config.CHROMA_LOCAL_PATH
 )
 
 vector_search_service = VectorSearchService(
