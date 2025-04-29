@@ -22,11 +22,8 @@ from typing import Any
 from botocore.exceptions import ClientError, NoCredentialsError
 from chat.utils.logger import get_logger
 
-from pathlib import Path # Para manipulação de caminhos de forma multiplataforma
-from dotenv import load_dotenv # Para carregar variáveis de um arquivo .env
-env_path = Path(__file__).resolve().parent.parent / ".env"
-# Carrega as variáveis de ambiente do arquivo .env encontrado no caminho especificado
-load_dotenv(dotenv_path=env_path)
+from dotenv import load_dotenv  # Para carregar variáveis de um arquivo .env
+load_dotenv()
 
 # =============================================
 #        INSIRA SEU NOME DE USUÁRIO AQUI
@@ -227,8 +224,8 @@ class ConfigLoader:
             return env_value
 
         # 3. Usar default
-        logger.info(
-            f"[CONFIG] Usando default para {env_var} (SSM não encontrado)")
+        # logger.info(
+        #     f"[CONFIG] Usando default para {env_var} (SSM não encontrado)")
         self._cache[ssm_name] = default  # Armazena no cache
         return default
 
@@ -377,6 +374,8 @@ if __name__ == "__main__":
     logger.info("\n===  🔒 Configurações Carregadas  🔒 ===")
     logger.info("\n=== 🌐 Infraestrutura === ")
     logger.info(f"- S3 Bucket: {config.S3_BUCKET_NAME}")
+    logger.info(f"- ChromaDB Bucket: {config.S3_BUCKET_CHROMADB}")
+    logger.info(f"- ChromaDB Path: {config.CHROMA_DB_PATH}")
     logger.info(f"- Log Group: {config.LOG_GROUP}")
 
     logger.info("\n=== 🪨  Bedrock === ")
@@ -402,3 +401,6 @@ if __name__ == "__main__":
     logger.info(
         f"- Linhas mínimas: {pdf_config.MIN_VALID_CHUNK_LINES}"
     )
+
+# Navegue até o diretório do projeto e execute:
+# python -m chat.utils.config
