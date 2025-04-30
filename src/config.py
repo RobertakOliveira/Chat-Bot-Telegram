@@ -37,6 +37,11 @@ class Config:
     AWS_PROFILE = os.environ.get('AWS_PROFILE', None)
     DEBUG_MODE = os.environ.get('DEBUG_MODE', 'True').lower() == 'true'
     
+    # CloudWatch Logs
+    CLOUDWATCH_LOG_GROUP = os.environ.get('CLOUDWATCH_LOG_GROUP', 'juridico-rag-app')
+    CLOUDWATCH_REGION = os.environ.get('CLOUDWATCH_REGION', BEDROCK_REGION)
+    ENABLE_CLOUDWATCH_LOGS = os.environ.get('ENABLE_CLOUDWATCH_LOGS', 'true').lower() == 'true'
+    
     @classmethod
     def validate(cls):
         """
@@ -81,6 +86,14 @@ class Config:
             region_name=cls.BEDROCK_REGION
         )
         
+        cloudwatch_client = None
+        if cls.ENABLE_CLOUDWATCH_LOGS:
+            cloudwatch_client = session.client(
+                service_name='logs',
+                region_name=cls.CLOUDWATCH_REGION
+            )
+            logger.info(f"Cliente CloudWatch Logs criado (região: {cls.CLOUDWATCH_REGION})")
+        
         logger.info(f"Clientes AWS criados (região Bedrock: {cls.BEDROCK_REGION})")
         
-        return s3_client, bedrock_client 
+        return s3_client, bedrock_client, cloudwatch_client 
