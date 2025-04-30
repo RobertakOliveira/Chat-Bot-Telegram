@@ -54,8 +54,9 @@ def main():
     # Top k sendo chamado por model kwargs pois o chat bedrock não tem esse parâmetro, langchain quebra esse galho
     model = ChatBedrockConverse(
         model="amazon.nova-pro-v1:0",
-        region_name="us-east-1"
-        
+        region_name="us-east-1",
+        temperature=0.1,
+        top_p=0.1
     )
 
     # 4. Prompt customizado
