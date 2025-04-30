@@ -7,7 +7,7 @@ from langchain_community.vectorstores import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # Configurações
-bucket_name = "testesprint7e8"
+bucket_name = os.getenv("BUCKET_NAME")
 prefix = "juridicos/"
 persist_directory = "./chroma_db"
 load_dotenv()
