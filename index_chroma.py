@@ -4,27 +4,21 @@ import boto3
 import chromadb
 from langchain_core.documents import Document
 from langchain_community.vectorstores import Chroma
+from dotenv import load_dotenv
+load_dotenv()
 
-# Credenciais temporárias da AWS (válidas enquanto a sessão estiver ativa)
-aws_access_key_id = ""
-aws_secret_access_key = ""
-aws_session_token = ""us-east-1"
+session = boto3.Session(profile_name=os.getenv("AWS_PROFILE"))
 
-session = boto3.Session(
-    aws_access_key_id=aws_access_key_id,
-    aws_secret_access_key=aws_secret_access_key,
-    aws_session_token=aws_session_token,
-    region_name=aws_region
-)
+print("------------------------------------------------------")
+print("🔄 Inicializando o cliente S3...")
 
-# Configurações do S3 e Chroma
-bucket = ""
+bucket = os.getenv("BUCKET_NAME")
 prefixo = "embeddings_temp/"
 chroma_path = "chroma_db_producao"
+collection_name = "producao"  # <--- Definido aqui para consistência
+
 os.makedirs(prefixo, exist_ok=True)
 
-
-# Baixa arquivos JSON da bucket
 def baixar_arquivos_s3():
     print("🔽 Baixando arquivos JSON do S3...")
     s3 = session.client("s3")
@@ -41,8 +35,6 @@ def baixar_arquivos_s3():
                 print(f"✔️ Baixado: {key} → {caminho_local}")
     return arquivos
 
-
-# Carrega os documentos e embeddings
 def carregar_dados(arquivos):
     documentos = []
     embeddings = []
@@ -55,20 +47,24 @@ def carregar_dados(arquivos):
                 emb = item["embedding"]
                 if tamanho_esperado is None:
                     tamanho_esperado = len(emb)
-                documentos.append(Document(page_content=item["text"], metadata=item.get("metadata", {})))
+
+                # Cuidado aqui: vamos usar 'text', não 'texto'
+                documentos.append(
+                    Document(
+                        page_content=item.get("texto", ""),   
+                        metadata={ "source": item["metadata"]["source"] }
+                    ))
+
                 embeddings.append(emb)
 
     print(f"📊 Total de documentos: {len(documentos)}")
     print(f"📏 Dimensão dos embeddings: {tamanho_esperado}")
     return documentos, embeddings
 
-
-# Indexa diretamente no Chroma usando os embeddings prontos
 def indexar_no_chroma(docs, embs):
     print("🚀 Indexando embeddings reais no Chroma...")
 
     client = chromadb.PersistentClient(path=chroma_path)
-    collection_name = "producao"
 
     try:
         collection = client.get_or_create_collection(name=collection_name)
@@ -84,3 +80,9 @@ def indexar_no_chroma(docs, embs):
     )
 
     print(f"✅ {len(docs)} documentos indexados na coleção '{collection_name}'.")
+
+arquivos = baixar_arquivos_s3()
+documentos, embeddings = carregar_dados(arquivos)
+
+print("🔍 Iniciando a indexação no Chroma...")
+indexar_no_chroma(documentos, embeddings)
