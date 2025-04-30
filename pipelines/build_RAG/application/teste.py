@@ -103,7 +103,7 @@ def handler(event, context):
 
     # 8. Consulta
     query = message_text
-    print(f"\nConsulta: {query}\n")
+    #print(f"\nConsulta: {query}\n")
 
     # 9. Recupera os trechos relevantes
     # Recupera os documentos relevantes com scores de similaridade
@@ -113,9 +113,9 @@ def handler(event, context):
     print("\nChunks retornados com similaridade:")
     context_parts = []
     for i, (doc, score) in enumerate(results_with_scores, 1):
-        raw_source = doc.metadata.get("source", "desconhecido")
-        page = doc.metadata.get("page", "n/d")
-        print(f"Chunk {i}: Similaridade: {round(score, 4)}")
+        #raw_source = doc.metadata.get("source", "desconhecido")
+        #page = doc.metadata.get("page", "n/d")
+        #print(f"Chunk {i}: Similaridade: {round(score, 4)}")
         context_parts.append(doc.page_content)
 
 
@@ -127,12 +127,12 @@ def handler(event, context):
     resposta = chain.invoke({"input": query, "context": context})
 
     # 11. Exibe a resposta
-    print("\nResposta gerada:\n", resposta.content)
+    #print("\nResposta gerada:\n", resposta.content)
     
     #fim rag, volta telegram com resposta
     # aqui chama o rag 
     reply_message = resposta.content
-    print("***Resposta gerada: %s", reply_message)
+    #print("***Resposta gerada: %s", reply_message)
     
 
     try:
