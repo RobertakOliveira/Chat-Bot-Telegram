@@ -128,7 +128,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     try:
         await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
-        logger.info(f"Mensagem recebida: {texto}")
+        logger.info(f"Mensagem recebida : {texto}")
 
         # Respostas rápidas
         if texto.lower() in ["voltar", "voltar ao início"]:
