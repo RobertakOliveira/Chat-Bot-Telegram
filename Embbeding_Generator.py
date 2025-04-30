@@ -2,7 +2,7 @@ import os
 import boto3
 import json
 from langchain_core.documents import Document
-from langchain_community.embeddings.bedrock import BedrockEmbeddings
+from langchain_aws import BedrockEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
 
@@ -105,5 +105,5 @@ def main():
 
         print(f"✅ {len(embeddings)} embeddings gerados e salvos para '{key}'.")
 
-if name == "main":
+if __name__ == "__main__":
     main()
