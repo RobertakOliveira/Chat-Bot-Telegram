@@ -50,7 +50,7 @@ def handler(event, context):
         logger.info("*** message id: %s", message_id)
 
         # RAG setup
-        bucket_name = "bucketembeddingssprint7"
+        bucket_name = "bucketembeddingssprint77" #lembrar de mudar sempre pra bucket própria, ...7 Caio, ...77 Bernardo, ...777 Moisés
         prefix = "chroma_db/"
         persist_directory = "/tmp/chroma_db"
 
