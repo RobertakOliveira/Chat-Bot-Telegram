@@ -2,15 +2,18 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 from langchain_community.document_loaders import PyPDFLoader
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Nome do bucket S3 que será utilizado (deve ser único globalmente na AWS)
-bucket_name = "meu-bucket-pdfs-eich-1407-pb-jan"
+bucket_name = os.getenv("BUCKET_NAME")
 
 # Caminho local onde estão os arquivos PDF
 dataset_dir = "dataset/"
 
 # Nome do perfil configurado com aws configure sso
-session = boto3.Session(profile_name="eich-fernandes")
+session = boto3.Session(profile_name=os.getenv("AWS_PROFILE"))
 
 # Inicializa o cliente do serviço S3 usando as credenciais configuradas no ambiente
 s3 = session.client("s3")
