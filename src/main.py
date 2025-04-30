@@ -19,6 +19,6 @@ def main():
 def process_query():
     return ProcessQuery()
 
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+#teste local
+#if __name__ == "__main__":
+    #app.run(host="0.0.0.0", port=5000, debug=True)
