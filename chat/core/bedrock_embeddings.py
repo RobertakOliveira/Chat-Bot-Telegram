@@ -19,11 +19,11 @@ class BedrockEmbeddingHandler:
     def __init__(self):
         self.embeddings = BedrockEmbeddings(
             client=bedrock_runtime,
-            model_id=bedrock_config.MODEL_ID,
+            model_id=bedrock_config.BEDROCK_EMBEDDING_MODEL_ID,
             region_name=AWS_REGION
         )
         logger.info(
-            f"Inicializado BedrockEmbeddings com {bedrock_config.MODEL_ID}")
+            f"Inicializado BedrockEmbeddings com {bedrock_config.BEDROCK_EMBEDDING_MODEL_ID}")
 
     @retry(
         wait=wait_exponential(

@@ -41,7 +41,7 @@ resource "aws_cloudwatch_dashboard" "chatbot_dashboard" {                     //
           title = "Network In/Out", //titulo do widget
           metrics = [
             ["AWS/EC2", "NetworkIn", "InstanceId", var.instance_id],
-            [".", "NetworkOut", ".", "."]
+            ["AWS/EC2", "NetworkOut", "InstanceId", var.instance_id] # Nesta linha, o InstanceId é o mesmo do NetworkIn
           ],
           period = 300, //5 minutos para atualizar
           stat   = "Sum",
@@ -101,7 +101,7 @@ resource "aws_cloudwatch_metric_alarm" "high_cpu" {
   alarm_description   = "Alerta: CPU acima de 80% por 5 minutos"
 
   dimensions = {
-    InstanceId = var.instance_id
+    InstanceId = module.compute.instance_id
   }
 
   tags = {

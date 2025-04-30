@@ -107,3 +107,6 @@ if __name__ == "__main__":
     # Ponto de entrada principal
     check_config()  # Verifica configurações primeiro
     run_bot()  # Inicia o bot
+
+# Instruções para rodar localmente: (diretorio raiz)
+# python -m app.bot (diretório raíz)

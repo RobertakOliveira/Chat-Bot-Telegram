@@ -1,5 +1,5 @@
 # chat/core/query_processing.py
-
+# Garantir que o pré-processamento de cada consulta seja realizado de forma isolada por usuário, para que as informações não se misturem entre os usuários.
 # TODO: Integração com o RAG
 # ------------------------------------------------------------
 # 1. Saída do pré-processamento agora inclui:
@@ -14,93 +14,279 @@
 # ------------------------------------------------------------
 
 
+import json
 import re
-from typing import Dict
+from dataclasses import dataclass, field
+from typing import Dict, Optional, List
+from botocore.exceptions import ClientError
+
 from chat.core.query_embeddings import get_query_embedding
-from chat.utils.legal_terms import detect_document_type, normalize_legal_terms, detect_legal_intent
 from chat.utils.logger import get_logger
+from chat.utils.aws_clients import bedrock_runtime
+from chat.utils.config import bedrock_config
 
 logger = get_logger("query_processing")
 
 
-def preprocess_query(user_query: str, chat_history: list = None) -> Dict:
+@dataclass
+class UserSession:
+    """Contêiner para manter o estado isolado por usuário"""
+    user_id: str
+    chat_history: List[Dict] = field(default_factory=list)
+
+    def add_message(self, message: str, is_user: bool = True) -> None:
+        """Adiciona mensagem ao histórico mantendo contexto"""
+        msg_type = "user" if is_user else "assistant"
+        self.chat_history = self.chat_history or []
+        self.chat_history.append({
+            "role": msg_type,
+            "message": message[:2000]
+        })  # Limita tamanho
+
+        # Adicionar log para verificação
+        logger.info(
+            f"1 - Mensagem adicionada ao histórico: {message[:100]}...")
+
+    def get_history(self) -> List[Dict]:
+        """Retorna o histórico de mensagens"""
+        return self.chat_history
+
+    def get_history_text(self) -> str:
+        """Retorna o histórico de mensagens como uma string de texto"""
+        history_text = ""
+        for message in self.chat_history:
+            role = message['role']
+            msg = message['message']
+            history_text += f"{role.capitalize()}: {msg}\n"
+        return history_text
+
+
+def invoke_nova_pro_rag_preprocess(prompt: str, session: UserSession, system_message: Optional[str] = None) -> str:
     """
-    Processa a pergunta do usuário antes de enviar ao RAG.
+    Invoca o Amazon Nova Pro usando a API Converse do Bedrock com todos os parâmetros documentados.
 
     Args:
-        user_query: Pergunta bruta do usuário
-        chat_history: Histórico da conversa (opcional para contexto)
+        prompt: Texto da consulta do usuário
+        session: Sessão contendo histórico de conversa
+        system_message: Instruções de sistema opcionais
 
     Returns:
-        Dict: {
-            "status": "success"|"error",
-            "original_query": str,
-            "processed_query": str,
-            "intent": str,
-            "document_type": str,
-            "search_filters": Dict,  # Filtros prontos para o ChromaDB
-            "embedding": list[float],
-            "error": Optional[str]
-        }"""
+        str: Resposta textual do modelo
+
+    Configurações padrão:
+        - temperature: 0.3 (mais determinístico)
+        - topP: 0.9 (amostragem de núcleo)
+        - maxTokens: Definido em bedrock_config
+        - stopSequences: [] (sem paradas pré-definidas)
+        """
     try:
-        # 1. Normalização jurídica
-        processed_query = normalize_legal_terms(user_query)
+        # 1. Construir o payload específico para o Amazon Nova Pro
+        messages = [
+            {
+                "role": "user" if msg["role"] == "user" else "assistant",
+                "content": [{"text": msg["message"]}]
+            }
+            for msg in session.chat_history
+        ]
+        messages.append({
+            "role": "user",
+            "content": [{"text": prompt}]
+        })
 
-        # 2. Análise jurídica
-        intent = detect_legal_intent(processed_query)
-        doc_type = detect_document_type(processed_query)
+        # 2. Configuração de inferência
+        inference_config = {
+            "maxTokens": bedrock_config.MAX_TOKENS,
+            "temperature": 0.3,  # Valor mais baixo para tarefas determinísticas
+            "topP": 0.9,        # Amostragem de núcleo padrão
+            "stopSequences": [],  # Sem sequências de parada específicas
+        }
+        # 3.  Preparar payload completo
+        converse_params = {
+            "modelId": bedrock_config.BEDROCK_QUERY_MODEL_ID,
+            "messages": messages,
+            "inferenceConfig": inference_config
+        }
 
-        # 3. Preparação de filtros para ChromaDB Define se a query é específica ou ampla
-        is_specific = any(
-            term in user_query.lower()
-            for term in [
-                "acórdão recorrido",
-                "embargos",
-                "agravo de instrumento",
-                "recurso extraordinário",
-                "admissibilidade"
-            ]
-        )
+        # Adicionar system message se fornecida (opcional)
+        if system_message:
+            converse_params["system"] = [{"text": system_message}]
 
-        if doc_type:
-            if is_specific:
-                search_filters = {"doc_type": doc_type}
-            else:
-                search_filters = {"doc_type": {"$ne": None}}
-        else:
-            search_filters = {}
+        logger.info(
+            f"Enviando para o Nova Pro: {json.dumps(converse_params, indent=2)}")
 
-        # PODE-SE REFINAR A PERGUNTA APÓS O PRÉ-PROCESSAMENTO: refined_query = refine_query_with_bedrock(processed_query)
-        # ASSIM ENTÃO A PERGUNTA REFINADA SERÁ USADA NO CHROMADB: embedding = get_query_embedding(refined_query)
+        # 4. Chamada à API Converse
+        response = bedrock_runtime.converse(**converse_params)
 
-        # 4. Geração de embedding
-        embedding = get_query_embedding(processed_query)
+        # 5. Processar resposta
+        if not response or "output" not in response:
+            raise RuntimeError("Resposta inválida da API")
 
-        # 5. Estrutura do retorno para ser usado no RAG
+        response_text = response["output"]["message"]["content"][0]["text"]
+        logger.info(
+            f"Resposta recebida - Tokens: {response.get('usage', {}).get('outputTokens', 'N/A')}")
+        return response_text
+    except ClientError as e:
+        error_code = e.response['Error']['Code']
+        logger.error(f"Erro AWS ({error_code}): {str(e)}", extra={
+            "model_id": bedrock_config.BEDROCK_QUERY_MODEL_ID,
+            "error_details": e.response['Error']
+        })
+        raise RuntimeError(
+            f"Falha na chamada à API Bedrock: {error_code}") from e
+
+    except Exception as e:
+        logger.error(f"Erro inesperado: {str(e)}", exc_info=True)
+        raise RuntimeError("Erro ao processar consulta no Nova Pro") from e
+
+
+def classify_query(query: str, session: UserSession) -> Dict:
+    """Classifica a pergunta em tipo documental e intenção."""
+    system_msg = """Você é um classificador especializado em documentos judiciais. 
+    Responda APENAS com JSON contendo 'doc_type' e 'intent'."""
+    # Inclui o histórico de mensagens no prompt, além da pergunta atual
+    messages = []
+    for msg in session.chat_history:
+        messages.append({
+            "role": msg["role"],  # Pode ser "user" ou "assistant"
+            "content": [{"text": msg["message"]}]
+        })
+
+    # Adiciona a pergunta atual no final
+    messages.append({
+        "role": "user",  # Pergunta mais recente é do usuário
+        "content": [{"text": query}]
+    })
+
+    prompt = f"""
+    Classifique a pergunta jurídica abaixo APENAS com os valores permitidos:
+    1. Tipo de Documento permitidos: Decisao Admissibilidade, Acordao Recorrido, Agravo, Recurso Extraordinario, Acordao Embargos ou 'outro'
+    2. Intenções permitidas: 'buscar_info', 'comparar', 'esclarecer_duvida' ou 'outro'.
+
+    Termos jurídicos explicados:
+        Agravo: Um recurso utilizado para contestar decisões interlocutórias, ou seja, decisões que não encerram o processo. Exemplo: Quando um juiz nega seguimento a um recurso.
+        Decisão de Admissibilidade: A decisão que verifica se um recurso pode ser aceito para ser julgado nas instâncias superiores. Exemplo: Decisão sobre a admissibilidade de um recurso especial no STJ ou STF.
+        Acórdão Embargos: Decisão colegiada resultante de embargos de declaração, usados para esclarecer omissões ou contradições nas decisões anteriores.
+        Acórdão Recorrido: O acórdão que está sendo contestado em um recurso. Exemplo: Se uma das partes não concorda com a decisão, entra com um recurso.
+        Recurso Extraordinário: Recurso que vai ao Supremo Tribunal Federal (STF) quando há violação direta à Constituição. Exemplo: Decisão judicial que fere um direito fundamental.
+
+    Retorne APENAS JSON válido com a estrutura:
+        {{
+            "doc_type": "...",
+            "intent": "..."
+        }}
+    Pergunta: {query}
+    """
+    try:
+        response = invoke_nova_pro_rag_preprocess(
+            prompt, session, system_message=system_msg)
+        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        if json_match:
+            result = json.loads(json_match.group())
+            return {
+                "doc_type": result.get("doc_type", "outro"),
+                "intent": result.get("intent", "outro")
+            }
+        return {"doc_type": "outro", "intent": "outro"}
+    except Exception as e:
+        logger.info(
+            " ⚠️ Falha na classificação, retornando valores padrão: {str(e)}", exc_info=True)
+        return {"doc_type": "outro", "intent": "outro"}
+
+
+def refine_query(query: str, doc_type: str, session: UserSession) -> str:
+    """Refina a pergunta para busca jurídica."""
+    if doc_type == "outro":
+        return query
+
+    system_msg = "Você é um assistente para reformulação de consultas jurídicas. Responda APENAS com a pergunta refinada."
+    # Inclui o histórico de mensagens no prompt, além da pergunta atual
+    messages = []
+    for msg in session.chat_history:
+        messages.append({
+            "role": msg["role"],  # Pode ser "user" ou "assistant"
+            "content": [{"text": msg["message"]}]
+        })
+
+    # Adiciona a pergunta atual no final
+    messages.append({
+        "role": "user",  # Pergunta mais recente é do usuário
+        "content": [{"text": query}]
+    })
+    prompt = f"""
+    Reformule esta pergunta para busca em documentos jurídicos do tipo '{doc_type}'.
+    - Adicione termos técnicos jurídicos
+    - Mantenha o significado original
+    - Seja conciso
+    
+    Pergunta original: {query}
+    """
+    try:
+        refined_text = invoke_nova_pro_rag_preprocess(
+            prompt, session, system_message=system_msg)
+        return refined_text.strip() if refined_text else query
+    except Exception:
+        logger.info(" ⚠️ Falha no refinamento, retornando query original")
+        return query
+
+
+def preprocess_query(user_query: str, session: UserSession) -> Dict:
+    """
+    Fluxo principal de pré-processamento para RAG
+
+    Processos:
+    1. Classificação da pergunta
+    2. Refinamento condicional
+    3. Geração de embedding
+
+    Args:
+        user_query (str): Pergunta bruta do usuário
+        chat_history (list): Histórico da conversa (opcional para contexto)
+
+    Returns:
+        - dict: Resposta do modelo com a classificação da pergunta e geração de embedding."""
+    try:
+        # Extrair histórico de mensagens como texto
+        history_text = "\n".join([msg["message"]
+                                 for msg in session.get_history()])
+
+        # Recupere o histórico completo, incluindo perguntas e respostas anteriores
+        history_text = session.get_history_text()
+
+        # Adicionar log de depuração
+        logger.info(
+            f"Histórico após adicionar a pergunta: {history_text}")
+
+        # 1. Classificação
+        classification = classify_query(user_query, session)
+
+        # 2. Refinamento condicional
+        doc_type = classification["doc_type"]
+        refined_query = refine_query(user_query, doc_type, session)
+
+        # *** AQUI ADICIONA A PERGUNTA REFINADA AO HISTÓRICO ***
+        session.add_message(refined_query)
+        logger.info(
+            f"2- Pergunta refinada adicionada ao histórico: {refined_query}")
+
+        # 5. Preparar saída
         return {
             "status": "success",
             "original_query": user_query,
-            # Agora, a consulta é refinada: #  "processed_query": refined_query,
-            "processed_query": processed_query,
-            "intent": intent,
-            "document_type": doc_type,
-            "search_filters": search_filters,
-            "embedding": embedding,
-            "is_general_query": not is_specific,  # Útil para logs
-            "error": None
+            "refined_query": refined_query,
+            "embedding": get_query_embedding(refined_query),
+            "doc_type": doc_type,
+            "intent":  classification["intent"],
+            "search_filters": {"doc_type": doc_type} if doc_type != "outro" else None
         }
 
     except Exception as e:
-        logger.error(f"Falha no pré-processamento: {str(e)}", extra={
-            "original_query": user_query,
-            "error": str(e)
-        })
-
+        logger.error(
+            f"Erro no pré-processamento: {str(e)}", extra={"query": user_query})
         return {
             "status": "error",
             "original_query": user_query,
             "error": str(e),
-            **{k: None for k in ["processed_query", "intent", "document_type", "search_filters", "embedding"]}
+            "search_filters": None
         }
 
 
@@ -109,4 +295,40 @@ def preprocess_query(user_query: str, chat_history: list = None) -> Dict:
 # Pré-processamento: Normalização jurídica, detecção de intenção e tipo de documento.
 # Refinamento com Bedrock: Passar a consulta pré-processada para o Bedrock para refinamento.
 # Geração de Embedding: Gerar o embedding usando a consulta refinada.
-# Busca no ChromaDB: Usar o embedding para buscar documentos relevantes no banco de dados.
+
+# Ponto Importante
+# Caso o doc_type seja "outro", a busca no ChromaDB pode ser realizada sem filtro ou com um filtro mais amplo, dependendo de como você quer estruturar essa parte do código. Isso permite que a consulta seja feita de forma mais flexível, sem restrições quando o tipo de documento não é claramente identificado.
+
+if __name__ == "__main__":
+    # Configuração inicial de teste
+    print("🐞 Modo de Depuração Ativo - Amazon Nova Pro\n")
+
+    # Inicializa sessão de teste
+    test_session = UserSession(user_id="test_nova_pro")
+
+    # Teste 1: Pergunta específica sobre Agravo
+    pergunta1 = "Quais os prazos para interpor agravo?"
+    print(f"\n🔵 TESTE 1: {pergunta1}")
+    resultado1 = preprocess_query(pergunta1, test_session)
+    print(
+        f"Classificação: {resultado1['doc_type']} | Intenção: {resultado1['intent']}")
+    print(f"Refinada: {resultado1['refined_query']}")
+
+    # Teste 2: Pergunta sobre Recurso Extraordinário
+    pergunta2 = "Como funciona um recurso extraordinário no STF?"
+    print(f"\n🟡 TESTE 2: {pergunta2}")
+    resultado2 = preprocess_query(pergunta2, test_session)
+    print(
+        f"Classificação: {resultado2['doc_type']} | Intenção: {resultado2['intent']}")
+
+    # Teste 3: Com histórico
+    test_session.add_message("O que é uma decisão de admissibilidade?")
+    test_session.add_message(
+        "É a decisão que analisa se um recurso pode ser julgado", False)
+    pergunta3 = "Quais os critérios para essa decisão?"
+    print(f"\n🟣 TESTE 3 (com histórico): {pergunta3}")
+    resultado3 = preprocess_query(pergunta3, test_session)
+    print(f"Classificação: {resultado3['doc_type']}")
+
+# Navegue até a pasta raiz e execute:
+#     python -m chat.core.query_processing
