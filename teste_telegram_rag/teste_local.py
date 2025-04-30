@@ -51,9 +51,11 @@ def main():
     )
 
     # 3. Instanciação do modelo conversacional Bedrock
+    # Top k sendo chamado por model kwargs pois o chat bedrock não tem esse parâmetro, langchain quebra esse galho
     model = ChatBedrockConverse(
         model="amazon.nova-pro-v1:0",
         region_name="us-east-1"
+        
     )
 
     # 4. Prompt customizado
@@ -65,6 +67,8 @@ def main():
         "- Fundamente suas respostas com base nos documentos, citando os trechos relevantes de maneira integrada ao texto.\n"
         "- Se a informação necessária não estiver presente ou for insuficiente, declare expressamente a limitação, sem tentar supor ou inferir dados ausentes.\n"
         "- Estruture a resposta de forma clara, coesa e organizada, utilizando parágrafos bem desenvolvidos.\n\n"
+        "- Se a informação necessária não estiver presente ou for insuficiente, declare expressamente a limitação, sem tentar supor ou inferir dados ausentes.\n"
+        "- Caso alguem mande uma mensagem como ola,oi, comprimentos no geral a resposta deve ser: \"Olá, sou um assistente jurídico. Como posso ajudar?\".\n\n"
         "Formato da tarefa:\n"
         "- Introdução breve contextualizando o tema da pergunta (se aplicável).\n"
         "- Análise fundamentada com base nos documentos fornecidos.\n"
@@ -84,7 +88,7 @@ def main():
     chain = prompt | model
 
     # 6. Exemplo de consulta
-    query = "batata?"
+    query = "Qual a tese defendida por Willy Fonseca Tempel em seu Recurso Extraordinário contra o INSS?Oi?"
     print(f"\nConsulta: {query}\n")
 
     # 7. Recupera os 3 chunks mais similares
