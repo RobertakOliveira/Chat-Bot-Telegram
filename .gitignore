@@ -10,3 +10,10 @@ __pycache__
 bd/*
 *.egg-info
 build/*
+terraform/**/*.hcl
+terraform/**/*.tfvars
+terraform/**/*.tfstate
+terraform/**/*.tfstate.backup
+terraform/**/*.txt
+terraform/.terraform/*
+terraform/**/.terraform/*
