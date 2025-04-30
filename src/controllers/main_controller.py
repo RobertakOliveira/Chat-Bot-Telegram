@@ -21,7 +21,7 @@ from src.services.retrieval_and_generation.vector_search_service import VectorSe
 from src.services.retrieval_and_generation.rag_service import RAGService
 from src.repository.chromaDB_repo import ChromaRepository
 # Instanciações
-s3_client, bedrock_client = Config.get_aws_clients()
+_, bedrock_client, _ = Config.get_aws_clients()
 
 embedding_service = EmbeddingService(
     bedrock_client=bedrock_client,
