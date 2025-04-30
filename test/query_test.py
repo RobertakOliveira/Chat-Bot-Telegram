@@ -38,7 +38,7 @@ def inicializar_sistema():
     callback_manager = CallbackManager(handlers=callbacks)
     
     # Criação dos clientes AWS
-    s3_client, bedrock_client = Config.get_aws_clients()
+    _, bedrock_client, _ = Config.get_aws_clients()
     
     # Inicialização dos serviços e repositórios
     embedding_service = EmbeddingService(

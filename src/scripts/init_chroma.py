@@ -55,7 +55,7 @@ def load_chroma_db(filter_patterns=None, force_reload=False):
         logger.info(f"ChromaDB Path: {Config.CHROMA_LOCAL_PATH}")
         
         # Criação dos clientes AWS
-        s3_client, bedrock_client = Config.get_aws_clients()
+        s3_client, bedrock_client, _ = Config.get_aws_clients()
         
         # Inicialização dos serviços
         embedding_service = EmbeddingService(
