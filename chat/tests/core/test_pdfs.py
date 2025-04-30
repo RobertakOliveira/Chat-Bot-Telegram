@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from collections import defaultdict
 from langchain_community.document_loaders import PyPDFLoader
-from chat.core.pdf_processing import process_pdf_from_s3, process_all_pdfs_in_bucket
+from chat.core.pdf_processing import process_pdf_from_s3, process_all_pdfs_in_bucket, LegalTextProcessor
 import logging
 from chat.utils.logger import get_logger
 
@@ -10,10 +10,14 @@ from chat.utils.logger import get_logger
 logger = get_logger("test_pdfs")
 logger.setLevel(logging.DEBUG)
 
+USER = "talita"  # Substitua pelo seu nome de usuário ou ID
 
-def test_single_pdf(bucket, key, output_file="single_pdf_chunks.txt"):
+
+def test_single_pdf(bucket, key, processor, output_file="single_pdf_chunks.json"):
+    """Testa o processamento de um único PDF e grava os chunks em um arquivo de texto."""
+
     # Processa o PDF
-    documents = process_pdf_from_s3(bucket, key)
+    documents = process_pdf_from_s3(bucket, key, processor)
 
     # Exibe resumo no console (opcional)
     logger.info(
@@ -40,7 +44,7 @@ def test_single_pdf(bucket, key, output_file="single_pdf_chunks.txt"):
 
 def test_all_pdfs():
     # Teste com todos os PDFs no bucket
-    bucket = "consultor-juridico"
+    bucket = f"consultor-juridico-{USER}"
     all_docs = process_all_pdfs_in_bucket(bucket)
 
     logger.info(f"\n📊 Total de documentos processados: {len(all_docs)}")
@@ -59,7 +63,7 @@ def test_all_pdfs():
 
 def test_all_pdfs_com_metadados():
     # Teste com todos os PDFs no bucket
-    bucket = "consultor-juridico"
+    bucket = f"consultor-juridico-{USER}"
     all_docs = process_all_pdfs_in_bucket(bucket)
 
     # Nome do arquivo onde a saída será salva
@@ -117,12 +121,22 @@ if __name__ == "__main__":
     logger.info("=== TESTE DE PDF ÚNICO ===")
 
     # Configurações para o PDF que você quer testar
-    bucket = "consultor-juridico-talita"  # Substitua pelo seu bucket S3
+    bucket = f"consultor-juridico-{USER}"  # Substitua pelo seu bucket S3
     # Substitua pela chave do seu PDF
     key = "juridicos/ARE1467492/agravo/38-agravo.pdf"
-    output_file = "chunks_38_agravo.txt"  # Nome do arquivo de saída
+    output_file = "chunks_38_agravo1.txt"  # Nome do arquivo de saída
 
-    test_single_pdf(bucket, key, output_file)
+    # key = "juridicos/ARE1467493/agravo/78-agravo.pdf"
+    # output_file = "chunks_78_agravo1.txt"  # Nome do arquivo de saída
+
+    # key = "juridicos/RE1463299/acordao-recorrido/19-acordao-recorrido.pdf"
+    # output_file = "chunks_19_acordao_recorrido.txt"  # Nome do arquivo de saída
+
+    # # Crie o processador antes de chamar a função
+    processor = LegalTextProcessor()
+
+    # Agora passe todos os parâmetros necessários
+    test_single_pdf(bucket, key, processor, output_file)
 
     # test_local_pdf_page_count() # Você pode manter ou comentar este teste
 
