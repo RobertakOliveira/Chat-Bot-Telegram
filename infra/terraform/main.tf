@@ -12,7 +12,7 @@ module "s3" {
   bucket_tag_name    = "grupo1ChatbotDocuments"
   project            = var.project
   cost_center        = var.cost_center
-  dataset_path       = "${path.root}/../../dataset/juridicos.zip"
+  dataset_folder_path = "${path.root}/../../dataset/juridicos"
 }
 
 # EC2

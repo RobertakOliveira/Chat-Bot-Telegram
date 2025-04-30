@@ -5,6 +5,5 @@ output "bucket_name" {
 
 output "uploaded_files" {
   description = "Lista de arquivos enviados para o bucket com o prefixo 'juridicos'."
-  value       = [for i in range(length(aws_s3_object.juridico_zip)) : aws_s3_object.juridico_zip[i].key]
+  value       = [for o in aws_s3_object.juridico_files : o.key]
 }
-

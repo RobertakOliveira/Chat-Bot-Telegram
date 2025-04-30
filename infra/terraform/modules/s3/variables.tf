@@ -18,13 +18,7 @@ variable "cost_center" {
   description = "Centro de custo associado."
 }
 
-variable "dataset_path" {
+variable "dataset_folder_path" {
   type        = string
-  description = "Caminho completo até o arquivo ZIP a ser enviado ao bucket."
-}
-
-variable "upload_zip" {
-  type        = bool
-  description = "Indica se o upload do arquivo ZIP deve ser realizado."
-  default     = true
+  description = "Caminho completo até a pasta 'juridicos' a ser enviada ao bucket."
 }
