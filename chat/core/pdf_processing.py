@@ -31,26 +31,34 @@ class LegalTextProcessor:
         )
 
     def _clean_text(self, text: str) -> str:
-        """Limpeza básica do texto"""
-        # Extrai elementos importantes que devem ser preservados
-        preserved = []
-        for pattern in pdf_config.LEGAL_PRESERVE_PATTERNS:
-            preserved.extend(pattern.findall(text))
-
+        """Limpeza básica do texto mantendo a ordem dos elementos preservados"""
         cleaned_text = text
+
+        # Marca os elementos importantes que devem ser preservados com placeholders únicos
+        preserve_map = {}
+        placeholder_counter = 0
+
+        # Primeiro passo: substituir elementos a preservar por placeholders
+        for pattern in pdf_config.LEGAL_PRESERVE_PATTERNS:
+            matches = pattern.finditer(cleaned_text)
+            for match in matches:
+                original_text = match.group(0)
+                placeholder = f"__PRESERVED_ELEMENT_{placeholder_counter}__"
+                preserve_map[placeholder] = original_text
+                cleaned_text = cleaned_text.replace(
+                    original_text, placeholder, 1)
+                placeholder_counter += 1
+
         # Remove elementos irrelevantes definidos na config
         for pattern in pdf_config.LEGAL_IGNORE_PATTERNS:
             matches = pattern.findall(cleaned_text)
             if matches:
-                logger.info(f"🔍 Removendo padrões irrelevantes: {matches}")
+                logger.info(f"🧼 Removendo padrões irrelevantes: {matches}")
             cleaned_text = pattern.sub('', cleaned_text)
 
-        # Recompõe o texto limpo com os elementos preservados no final
-        if preserved:
-            preserved_text = '\n' + '\n'.join(preserved)
-            cleaned_text = cleaned_text.strip() + preserved_text
-        else:
-            cleaned_text = cleaned_text.strip()
+        # Restaura os elementos preservados em suas posições originais
+        for placeholder, original_text in preserve_map.items():
+            cleaned_text = cleaned_text.replace(placeholder, original_text)
 
         return cleaned_text.strip()
 
@@ -91,7 +99,7 @@ def _extract_path_metadata(s3_key: str) -> Dict[str, str]:
 # ======================================================================
 
 
-def process_pdf_from_s3(bucket: str, key: str) -> List[Document]:
+def process_pdf_from_s3(bucket: str, key: str, processor: LegalTextProcessor) -> List[Document]:
     """
     Fluxo completo de processamento de PDF vindo do S3:
     - Valida tamanho
@@ -122,8 +130,8 @@ def process_pdf_from_s3(bucket: str, key: str) -> List[Document]:
             if os.path.getsize(tmp_file.name) == 0:
                 raise ValueError(f"Arquivo muito pequeno ou corrompido: {key}")
 
-            # 📄 Cria processador e inicia limpeza + chunking
-            processor = LegalTextProcessor()
+            # 📄 Usa o processador recebido, não cria um novo e inicia limpeza + chunking
+
             logger.info(
                 f"⏲️  Iniciando limpeza e divisão do texto para: {key}")
 
@@ -138,25 +146,28 @@ def process_pdf_from_s3(bucket: str, key: str) -> List[Document]:
             logger.info(
                 f"🗃️  Documentos processados e divididos em {len(raw_documents)} chunks para: {key}")
 
+            # Extrair metadados uma vez
+            path_metadata = _extract_path_metadata(key)
+
             # 🔍 Limpa e filtra os chunks válidos
             processed_docs = []
             for doc in raw_documents:
-                # Ignora textos curtos que podem ser irrelevantes
-                if len(doc.page_content or "") < pdf_config.MIN_CHUNK_LENGTH:
-                    # Log de aviso para o chunk muito curto
-                    logger.warning(
-                        f"⚠️ Chunk muito curto, ignorado: página {doc.metadata.get('page')}")
+                # # Ignora textos curtos que podem ser irrelevantes
+                # if len(doc.page_content or "") < pdf_config.MIN_CHUNK_LENGTH:
+                #     # Log de aviso para o chunk muito curto
+                #     logger.warning(
+                #         f"⚠️ Chunk muito curto, ignorado: página {doc.metadata.get('page')}")
 
-                    # Log de depuração para mostrar o conteúdo ignorado
-                    # Exibe os primeiros 500 caracteres do chunk
-                    logger.debug(
-                        f"Conteúdo ignorado na página {doc.metadata.get('page')}: {doc.page_content[:2000]}")
+                #     # Log de depuração para mostrar o conteúdo ignorado
+                #     # Exibe os caracteres do chunk ignorado
+                #     logger.warning(
+                #         f"🔍 Conteúdo ignorado na página {doc.metadata.get('page')}: {doc.page_content}")
 
-                    continue
+                #     continue
 
                 # Adiciona metadados complementares úteis para rastreamento
                 clean_metadata = {
-                    "doc_type": _extract_path_metadata(key)["doc_type"],
+                    "doc_type": path_metadata["doc_type"],
                     "source": key,
                     "page": doc.metadata.get("page", 0) + 1
                 }
@@ -172,13 +183,8 @@ def process_pdf_from_s3(bucket: str, key: str) -> List[Document]:
             logger.error(f"🚨 Erro processando {key}: {str(e)}")
             return []
 
-        finally:
-            # Limpeza garantida do arquivo temporário
-            try:
-                os.remove(tmp_file.name)
-            except Exception as e:
-                logger.warning(
-                    f"🧹 Falha ao limpar arquivo temporário: {str(e)}")
+    # Se chegou aqui, significa que houve erro ao baixar o arquivo
+    logger.warning(f"🧹 Falha ao limpar arquivo temporário: {str(e)}")
 # ======================================================================
 
 
@@ -194,17 +200,21 @@ def list_pdfs_in_bucket(bucket: str) -> List[Dict]:
     return pdfs
 
 # ======================================================================
+#   Processa todos os PDFs encontrados no bucket de forma recursiva
+# ======================================================================
 
 
 def process_all_pdfs_in_bucket(bucket: str) -> List[Document]:
     """Processa todos os PDFs encontrados no bucket de forma recursiva"""
     all_docs = []
     pdf_files = list_pdfs_in_bucket(bucket)  # ✅ Lista apenas arquivos
+    processor = LegalTextProcessor()
 
     for i, pdf in enumerate(pdf_files, 1):
         try:
+            # 📝 Exibe o progresso no console/cloudwatch
             logger.info(f"📝 ({i}/{len(pdf_files)}) Processando: {pdf['key']}")
-            docs = process_pdf_from_s3(pdf['bucket'], pdf['key'])
+            docs = process_pdf_from_s3(pdf['bucket'], pdf['key'], processor)
 
             all_docs.extend(docs)
             logger.info(f"✅ {pdf['key']} → {len(docs)} chunks\n")

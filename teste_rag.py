@@ -1,4 +1,4 @@
-from chat.core.rag_flow import rag_chain
+from chat.scripts.rag_flow import rag_chain
 
 def interactive_test():
     print("Teste interativo iniciado. Você pode digitar 'sair' para encerrar.")
