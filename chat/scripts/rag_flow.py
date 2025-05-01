@@ -1,74 +1,203 @@
+# chat/core/rag_flow.py
 import time
-from chat.core.query_embeddings import get_query_embedding
+from typing import List, Dict, Optional, Any
+
 from chat.core.retriever import ChromaRetriever
 from chat.core.generator import generate_response
-from typing import List, Dict
+from chat.core.query_processing import preprocess_query, UserSession
 from chat.utils.logger import get_logger
 
 logger = get_logger("rag_flow")
 
+
 class RAGFlow:
-   def __init__(self, collection_name: str = "collection_docs"):  # Nome fixo da coleção
-       """
-       Fluxo RAG simplificado com nome de coleção fixo
-       """
-       # Inicializa o retriever com a coleção ChromaDB especificada
-       self.retriever = ChromaRetriever(collection_name=collection_name)
-       logger.info("🚀 RAGFlow inicializado com sucesso")
-      
-   def retrieve(self, query: str, doc_type: str = None, case_id: str = None, n_results: int = 3) -> str:
-       """
-       Executa o fluxo completo de recuperação e geração de resposta
-      
-       Args:
-           query: Pergunta do usuário
-           doc_type: Tipo do documento (se fornecido)
-           case_id: ID do caso (se fornecido)
-           n_results: Número de resultados a retornar
-          
-       Returns:
-           Resposta gerada pelo modelo
-       """
-       logger.info("🟢 Iniciando execução do RAGFlow...")
-       logger.info(f"❓ Processando query: '{query}'")
-       start_time = time.time()  # Início da contagem de tempo para medir performance
-       try:
-           # Converte a pergunta em um vetor numérico (embedding) para busca semântica
-           query_embedding = get_query_embedding(query)
-           logger.info(f"🔢 Embedding da query gerado com sucesso: {query_embedding[:5]}...")  # Mostra só os 5 primeiros valores do embedding
-           
-           # Registra os filtros que serão usados na busca de documentos
-           logger.info(f"🧩 Filtros aplicados — doc_type: {doc_type}, case_id: {case_id}")
-          
-           # Usa os embeddings e filtros para encontrar documentos semelhantes semanticamente
-           retrieved_docs = self.retriever.retrieve_documents(query_embedding, doc_type=doc_type, case_id=case_id, n_results=n_results)
-          
-           # Verifica se foram encontrados documentos relevantes
-           if not retrieved_docs:
-               logger.warning("⚠️ Nenhum documento relevante encontrado para a consulta.")
-               return "A informação solicitada não está disponível nos documentos analisados."
-          
-           # Log do número de documentos encontrados
-           logger.info(f"📚 {len(retrieved_docs)} documentos encontrados.")
-           
-           # Registra os primeiros 300 caracteres de cada documento para fins de debug
-           logger.info("📄 Conteúdo dos documentos recuperados:")
-           for i, doc in enumerate(retrieved_docs):
-               logger.info(f"📝 Doc {i+1}: {doc.get('content')[:300]}...")  # Limita a 300 chars para não sobrecarregar os logs
-          
-           # Concatena todos os documentos em um único contexto para enviar ao modelo
-           context = " ".join([doc['content'] for doc in retrieved_docs])
-          
-           # Envia o contexto e a pergunta original para o LLM gerar uma resposta coerente
-           response = generate_response(context, query)
-           return response
-           
-       except Exception as e:
-           # Captura e registra qualquer erro ocorrido durante o processo
-           logger.exception(f"💥 Erro inesperado no fluxo RAG: {e}")
-           return "A informação solicitada não está disponível no documento analisado."
-           
-       finally: # Bloco executado sempre, independente de sucesso ou erro
-           # Calcula e registra o tempo total de execução para análise de performance
-           elapsed_time = time.time() - start_time
-           logger.info(f"🏁 Execução finalizada! ⏱️ Tempo total: {elapsed_time:.2f} segundos")
+    def __init__(self, collection_name: str = "collection_docs"):
+        """
+        Fluxo RAG integrado com pré-processamento de consultas
+        
+        Args:
+            collection_name: Nome da coleção no ChromaDB
+        """
+        # Inicializa o retriever com a coleção ChromaDB especificada
+        self.retriever = ChromaRetriever(collection_name=collection_name)
+        logger.info("🚀 RAGFlow inicializado com sucesso")
+    
+    def process_query(self, query: str, user_session: UserSession) -> Dict[str, Any]:
+        """
+        Pré-processa a consulta do usuário
+        
+        Args:
+            query: Pergunta original do usuário
+            user_session: Sessão do usuário contendo histórico de conversa
+            
+        Returns:
+            Dict: Resultado do pré-processamento
+        """
+        try:
+            # Adicionar a pergunta ao histórico de conversa
+            user_session.add_message(query)
+            
+            # Pré-processamento da consulta
+            processed_result = preprocess_query(query, user_session)
+            
+            # Verificar se houve erro no pré-processamento
+            if processed_result["status"] == "error":
+                logger.error(f"❌ Erro no pré-processamento: {processed_result['error']}")
+                raise ValueError(f"Falha no pré-processamento: {processed_result['error']}")
+                
+            logger.info(f"✅ Consulta pré-processada com sucesso: {processed_result['refined_query']}")
+            return processed_result
+            
+        except Exception as e:
+            logger.error(f"❌ Erro durante o processamento da consulta: {str(e)}")
+            raise
+    
+    def get_relevant_documents(self, query_embedding: List[float], doc_type: str = None, 
+                             case_id: str = None, n_results: int = 3) -> List[Dict]:
+        """
+        Recupera documentos relevantes com base no embedding e filtros
+        
+        Args:
+            query_embedding: Embedding vetorial da consulta
+            doc_type: Tipo de documento para filtrar
+            case_id: ID do caso para filtrar
+            n_results: Número de documentos a retornar
+            
+        Returns:
+            List[Dict]: Lista de documentos recuperados
+        """
+        try:
+            # Registra os filtros que serão usados na busca
+            logger.info(f"🧩 Aplicando filtros — doc_type: {doc_type}, case_id: {case_id}")
+            
+            # Recupera documentos do ChromaDB
+            docs = self.retriever.retrieve_documents(
+                query_embedding, 
+                doc_type=doc_type, 
+                case_id=case_id, 
+                n_results=n_results
+            )
+            
+            # Log dos documentos recuperados
+            if docs:
+                logger.info(f"📚 {len(docs)} documentos recuperados com sucesso")
+                for i, doc in enumerate(docs):
+                    logger.info(f"📝 Doc {i+1}: {doc.get('content')[:300]}...")
+            else:
+                logger.warning("⚠️ Nenhum documento relevante encontrado")
+                
+            return docs
+            
+        except Exception as e:
+            logger.error(f"❌ Erro ao recuperar documentos: {str(e)}")
+            raise
+    
+    def generate_answer(self, context: str, query: str) -> str:
+        """
+        Gera uma resposta com base no contexto e na consulta
+        
+        Args:
+            context: Contexto documental concatenado
+            query: Consulta refinada do usuário
+            
+        Returns:
+            str: Resposta gerada
+        """
+        try:
+            logger.info(f"🧠 Gerando resposta para consulta: {query[:100]}...")
+            return generate_response(context, query)
+            
+        except Exception as e:
+            logger.error(f"❌ Erro ao gerar resposta: {str(e)}")
+            raise
+    
+    def execute(self, query: str, user_session: UserSession, 
+               case_id: str = None, n_results: int = 3) -> Dict[str, Any]:
+        """
+        Executa o fluxo RAG completo encapsulando todo o processamento
+        
+        Args:
+            query: Pergunta original do usuário
+            user_session: Sessão do usuário
+            case_id: ID do caso (opcional)
+            n_results: Número de resultados desejados
+            
+        Returns:
+            Dict: Resposta completa com metadados
+        """
+        start_time = time.time()
+        logger.info(f"🟢 Iniciando execução do RAGFlow para consulta: {query}")
+        
+        try:
+            # 1. Pré-processamento da consulta
+            processed = self.process_query(query, user_session)
+            
+            # 2. Recuperação de documentos relevantes
+            docs = self.get_relevant_documents(
+                query_embedding=processed["embedding"],
+                doc_type=processed["doc_type"],
+                case_id=case_id,
+                n_results=n_results
+            )
+            
+            # Se não encontrou documentos relevantes
+            if not docs:
+                return {
+                    "answer": "A informação solicitada não está disponível nos documentos analisados.",
+                    "sources": [],
+                    "confidence": 0.0,
+                    "metadata": {
+                        "refined_query": processed["refined_query"],
+                        "doc_type": processed["doc_type"],
+                        "intent": processed["intent"],
+                        "processing_time": time.time() - start_time
+                    }
+                }
+            
+            # 3. Concatenar documentos para formar o contexto
+            context = " ".join([doc['content'] for doc in docs])
+            
+            # 4. Gerar resposta com base no contexto e na consulta refinada
+            answer = self.generate_answer(context, processed["refined_query"])
+            
+            # 5. Extrair fontes dos documentos (se disponíveis)
+            sources = []
+            for doc in docs:
+                if "title" in doc or "source" in doc:
+                    source = doc.get("title") or doc.get("source") or "Documento sem título"
+                    if source not in sources:
+                        sources.append(source)
+            
+            # 6. Construir resposta final com metadados
+            response = {
+                "answer": answer,
+                "sources": sources[:5],  # Limita a 5 fontes
+                "confidence": 0.85,  # Placeholder - em produção, calcular confiança real
+                "metadata": {
+                    "refined_query": processed["refined_query"],
+                    "doc_type": processed["doc_type"],
+                    "intent": processed["intent"],
+                    "processing_time": time.time() - start_time
+                }
+            }
+            
+            # 7. Registrar resposta no log
+            logger.info(f"✅ RAGFlow executado com sucesso - tempo: {time.time() - start_time:.2f}s")
+            
+            return response
+            
+        except Exception as e:
+            elapsed_time = time.time() - start_time
+            logger.exception(f"💥 Erro no RAGFlow: {str(e)}")
+            
+            # Retornar erro formatado
+            return {
+                "answer": "Não foi possível processar sua consulta devido a um erro interno.",
+                "sources": [],
+                "confidence": 0.0,
+                "error": str(e),
+                "metadata": {
+                    "processing_time": elapsed_time,
+                    "error": str(e)
+                }
+            }
