@@ -1,21 +1,19 @@
-# infra/outputs.tf
-
-output "chatbot_instance_public_ip" {
-  description = "Public IP address of the Chatbot EC2 instance"
-  value       = module.compute.instance_public_ip
+output "vpc_id" {
+  value = module.network.vpc_id
 }
 
-output "chatbot_instance_id" {
-  description = "ID of the Chatbot EC2 instance"
-  value       = module.compute.instance_id
+output "public_subnet_id" {
+  value = module.network.public_subnet_id
 }
 
-output "chatbot_security_group_id" {
-  description = "ID of the Chatbot Security Group"
-  value       = module.compute.security_group_id
+output "docs_bucket_name" {
+  value = module.storage.docs_bucket_name
 }
 
-output "cloudwatch_dashboard_url" {
-  description = "URL do Dashboard CloudWatch para monitoramento"
-  value       = module.compute.cloudwatch_dashboard_url
+output "instance_public_ip" {
+  value = module.compute.instance_public_ip
+}
+
+output "dashboard_url" {
+  value = module.monitoring.dashboard_url
 }

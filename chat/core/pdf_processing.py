@@ -11,7 +11,7 @@ from chat.utils.aws_clients import s3_client
 from chat.utils.config import pdf_config
 from chat.utils.logger import get_logger
 
-logger = get_logger("pdf_processing")
+logger = get_logger("Processamento dos PDFs em chunks")
 
 # ======================================================================
 
@@ -53,7 +53,7 @@ class LegalTextProcessor:
         for pattern in pdf_config.LEGAL_IGNORE_PATTERNS:
             matches = pattern.findall(cleaned_text)
             if matches:
-                logger.info(f"🧼 Removendo padrões irrelevantes: {matches}")
+                logger.debug(f"🧼 Removendo padrões irrelevantes: {matches}")
             cleaned_text = pattern.sub('', cleaned_text)
 
         # Restaura os elementos preservados em suas posições originais
@@ -208,7 +208,7 @@ def process_all_pdfs_in_bucket(bucket: str) -> List[Document]:
     """Processa todos os PDFs encontrados no bucket de forma recursiva"""
     all_docs = []
     pdf_files = list_pdfs_in_bucket(bucket)  # ✅ Lista apenas arquivos
-    processor = LegalTextProcessor()
+    processor = LegalTextProcessor()  # Criação da instância do processador
 
     for i, pdf in enumerate(pdf_files, 1):
         try:
