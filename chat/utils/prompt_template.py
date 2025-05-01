@@ -1,4 +1,7 @@
-prompt_template = """
+# chat/utils/prompt_template
+
+def prompt_template(context: str, question: str) -> str:
+    return f"""
 Você é um assistente jurídico especializado em interpretar documentos legais.  
 Sua missão é responder a perguntas **exclusivamente com base nas informações fornecidas no contexto abaixo**.
 
