@@ -27,6 +27,12 @@ class ChromaRetriever:
             logger.info(f"🔎 Iniciando busca de documentos... Embedding recebido com {len(query_embedding)} dimensões.")
 
             filters = {}
+
+            if doc_type and doc_type.lower() == "outro":
+                doc_type = None
+            if case_id and case_id.lower() == "outro":
+                case_id = None
+
             if doc_type and case_id:
                 filters = {
                     "$and": [
@@ -38,7 +44,7 @@ class ChromaRetriever:
                 filters = {"doc_type": {"$eq": doc_type}}
             elif case_id:
                 filters = {"case_id": {"$eq": case_id}}
-            
+
             if not filters:
                 filters = None
 
