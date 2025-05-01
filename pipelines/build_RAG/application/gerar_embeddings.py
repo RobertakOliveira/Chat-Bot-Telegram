@@ -14,11 +14,11 @@ from langchain_chroma import Chroma
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Variáveis de ambiente
-INPUT_BUCKET = os.environ.get("INPUT_BUCKET", "dataset-lambda-rag-sprint-8")
-INPUT_PREFIX = os.environ.get("INPUT_PREFIX", "dataset/")
-OUTPUT_BUCKET = os.environ.get("OUTPUT_BUCKET", "bucketembeddingssprint7")
-OUTPUT_PREFIX = os.environ.get("OUTPUT_PREFIX", "chroma_db/")
+# Variáveis de ambiente fornecidas pelo Terraform
+INPUT_BUCKET  = os.environ["INPUT_BUCKET"]
+INPUT_PREFIX  = os.environ.get("INPUT_PREFIX", "input/chroma_db/")
+OUTPUT_BUCKET = os.environ["OUTPUT_BUCKET"]
+OUTPUT_PREFIX = os.environ.get("OUTPUT_PREFIX", "output/chroma_db/")
 
 # Diretórios temporários no Lambda
 LOCAL_PDF_DIR = "/tmp/pdf_dataset"
@@ -27,9 +27,10 @@ PERSIST_DIR   = "/tmp/chroma_db"
 # Cliente S3
 s3 = boto3.client("s3")
 
+
 def download_pdfs_from_s3():
     """
-    Faz download recursivo de todos os arquivos .pdf em INPUT_BUCKET/INPUT_PREFIX
+    Faz download recursivo de todos os arquivos .pdf de INPUT_BUCKET/INPUT_PREFIX
     para LOCAL_PDF_DIR.
     """
     paginator = s3.get_paginator("list_objects_v2")
@@ -42,13 +43,13 @@ def download_pdfs_from_s3():
             local_path = os.path.join(LOCAL_PDF_DIR, rel_path)
             os.makedirs(os.path.dirname(local_path), exist_ok=True)
             s3.download_file(INPUT_BUCKET, key, local_path)
-            logger.info(f"Downloaded s3://{INPUT_BUCKET}/{key} → {local_path}")
+            logger.info(f"✅ Downloaded s3://{INPUT_BUCKET}/{key} → {local_path}")
 
 
 def build_chroma_index():
     """
     Carrega os PDFs de LOCAL_PDF_DIR, quebra em chunks e cria o índice Chroma
-    persistindo tudo em PERSIST_DIR.
+    persistindo em PERSIST_DIR.
     """
     if os.path.exists(PERSIST_DIR):
         shutil.rmtree(PERSIST_DIR)
@@ -56,15 +57,15 @@ def build_chroma_index():
 
     loader = DirectoryLoader(LOCAL_PDF_DIR, glob="**/*.pdf", loader_cls=PyPDFLoader)
     documents = loader.load()
-    logger.info(f"{len(documents)} documentos PDF carregados.")
+    logger.info(f"📄 {len(documents)} documentos PDF carregados.")
 
     splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=200)
     docs = splitter.split_documents(documents)
-    logger.info(f"{len(docs)} chunks gerados.")
+    logger.info(f"✂️ {len(docs)} chunks gerados.")
 
     embeddings = BedrockEmbeddings()
     vectorstore = Chroma.from_documents(docs, embeddings, persist_directory=PERSIST_DIR)
-    logger.info(f"Índice Chroma criado em: {PERSIST_DIR}")
+    logger.info(f"✅ Índice Chroma criado em: {PERSIST_DIR}")
     return vectorstore
 
 
@@ -79,7 +80,7 @@ def upload_chroma_to_s3():
             rel_path = os.path.relpath(local_path, PERSIST_DIR)
             s3_key = os.path.join(OUTPUT_PREFIX, rel_path).replace("\\", "/")
             s3.upload_file(local_path, OUTPUT_BUCKET, s3_key)
-            logger.info(f"Uploaded {local_path} → s3://{OUTPUT_BUCKET}/{s3_key}")
+            logger.info(f"✅ Uploaded {local_path} → s3://{OUTPUT_BUCKET}/{s3_key}")
 
 
 def handler(event, context):
@@ -87,10 +88,10 @@ def handler(event, context):
     Lambda handler para ser chamado via API Gateway (Proxy Integration).
     Faz download, gera embeddings e retorna um JSON de status.
     """
-    logger.info(f"Received event: {json.dumps(event)}")
+    logger.info(f"🚀 Received event: {json.dumps(event)}")
 
     try:
-        # Limpa e prepara diretórios
+        # Limpa e prepara diretórios temporários
         for d in (LOCAL_PDF_DIR, PERSIST_DIR):
             if os.path.exists(d):
                 shutil.rmtree(d)
@@ -107,10 +108,10 @@ def handler(event, context):
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*"
             },
-            "body": json.dumps({"message": "Embeddings gerados com sucesso"})
+            "body": json.dumps({"message": "✅ Embeddings gerados com sucesso"})
         }
     except Exception as e:
-        logger.error(f"Error: {str(e)}", exc_info=True)
+        logger.error(f"❌ Error: {str(e)}", exc_info=True)
         response = {
             "statusCode": 500,
             "headers": {"Content-Type": "application/json"},

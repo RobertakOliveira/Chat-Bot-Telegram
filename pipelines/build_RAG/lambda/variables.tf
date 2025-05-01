@@ -21,3 +21,8 @@ variable "aws_region" {
   description = "Região AWS"
   type        = string
 }
+
+variable "bucket_name" {
+  description = "Nome do bucket S3 onde serão armazenados os embeddings"
+  type        = string
+}
