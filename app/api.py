@@ -1,4 +1,5 @@
 from chat.core.query_processing import preprocess_query, UserSession
+from chat.scripts.rag_flow import RAGFlow 
 from app.config import API_SECRET_KEY, TELEGRAM_BOT_TOKEN  # Configurações sensíveis
 from fastapi import FastAPI, HTTPException, Depends  # Framework para criar a API
 from fastapi.security import APIKeyHeader  # Para autenticação via header
@@ -47,9 +48,9 @@ class Question(BaseModel):
     text: str  # Texto da pergunta (campo obrigatório)
     chat_id: Optional[str] = None  # ID do chat no Telegram (opcional)
     context: Optional[dict] = None  # Contexto adicional para o RAG (opcional)
+    case_id: Optional[str] = None # ID do caso para o RAG (opcional)
 
 # Endpoint para verificação do status da instância
-
 
 @app.get("/instance-health")
 async def instance_health():
@@ -71,6 +72,7 @@ user_sessions = {}
 
 
 @app.post("/ask", dependencies=[Depends(get_api_key)])  # Protegido por API Key
+
 async def ask_question(question: Question):
     """
     Processa perguntas jurídicas e retorna respostas usando sistema RAG.
@@ -78,84 +80,37 @@ async def ask_question(question: Question):
     """
     chat_id = question.chat_id  # ID do chat (se fornecido)
     try:
-
-        # TODO: Criar uma sessão de usuário com o chat_id (caso existam múltiplos usuários)
-        # 1. Tentar recuperar a sessão existente
+        # --- 1. Sessão do usuário (controla histórico, contexto, etc) ---
         if chat_id in user_sessions:
             session = user_sessions[chat_id]
         else:
-            # 2. Se não existir, criar uma nova sessão
-            # Certifique-se de que user_id seja string
+            # Se não tiver sessão ainda, cria uma nova e guarda no dicionário
             session = UserSession(user_id=str(chat_id))
             user_sessions[chat_id] = session
+        
+        # --- 2. Pipeline principal: chama o motor RAG para processar a pergunta ---
+        rag_engine = RAGFlow() # Instancia o motor que conecta embeddings + modelo LLM
+        rag_response = rag_engine.execute(
+            query=question.text, # Passa a pergunta original
+            user_session=session, # Leva junto a sessão (pra usar dados como histórico ou cache)
+        )
 
-        # Adiciona a nova mensagem do usuário ao histórico
-        session.add_message(question.text)
-        # Log detalhado da mensagem do usuário
-        logger.info(
-            f"Histórico da sessão antes do pré-processamento: {session.chat_history}")
-
-        # TODO: Chamar a função preprocess_query para processar a consulta
-        refined_query = preprocess_query(question.text, session)
-        refined_query_text = refined_query.get(
-            'refined_query', 'Não foi possível obter o histórico das perguntas refinada.')
-
-        # Log detalhado do resultado do pré-processamento
-        logger.info(f"Resultado do pré-processamento: {refined_query_text}")
-
-        # TODO: Recuperar a consulta refinada e o embedding gerado
-        # refined_query = result['refined_query']
-        # embedding = result['embedding']
-        # doc_type = result['doc_type']
-        # intent = result['intent']
-        # search_filters = result['search_filters']
-
-        # Chama a função do RAG com os parâmetros que você já tem
-        # rag_response = generate_rag_response(refined_query)
-
-        # SIMULAÇÃO: Resposta do sistema RAG (em desenvolvimento)
-        rag_response = {
-            "answer": "Resposta simulada - sistema RAG em desenvolvimento",
-            # Fontes da resposta
-            "sources": ["Lei 1234/56", "Jurisprudência XYZ"],
-            "confidence": 0.85  # Nível de confiança da resposta (0-1)
-        }
-
-        # Constrói a resposta final combinando pergunta e resposta RAG
-        response = {
-            "question": question.text,  # Repete a pergunta recebida
-            "refined_query": refined_query,  # Exibe a pergunta refinada para debug
-            **rag_response  # Inclui todos os campos da resposta RAG
-        }
-
-        # Registra a interação completa no log
+        # --- 3. Loga tudo: quem perguntou, o quê, e a resposta gerada ---
         logger.info({
-            "chat_id": question.chat_id,  # ID do chat (se existir)
-            "question": question.text,  # Texto da pergunta
-            "answer": rag_response["answer"],  # Resposta gerada
-            "confidence": rag_response["confidence"],  # Nível de confiança
-            "sources": rag_response["sources"]  # Fontes utilizadas
+            "chat_id": question.chat_id,
+            "question": question.text,
+            "answer": rag_response["answer"],
+            "metadata": rag_response.get("metadata", {})
         })
 
-        # Se existir chat_id, envia resposta para o Telegram (código comentado)
-        # if question.chat_id:
-        #     await telegram_send_message(question.chat_id, rag_response["answer"])
-        if question.chat_id:
-            # Envia a pergunta refinada
-            refined_query_text = refined_query.get(
-                'refined_query', 'Não foi possível obter a consulta refinada.')
-            await telegram_send_message(question.chat_id, refined_query_text)
-        return response  # Retorna a resposta para o cliente
+        # --- 4. Retorna a resposta final para o frontend / Telegram / etc ---
+        return rag_response  # Retorna a resposta para o cliente
 
     except Exception as e:
-        # Em caso de erro, registra exceção completa no log
-        logger.exception("Erro ao processar pergunta")
-        # Retorna erro 500 (Internal Server Error) com detalhes
-        raise HTTPException(status_code=500, detail=str(e))
-
+        logger.exception("Erro ao processar pergunta") # Em caso de erro, registra exceção completa no log
+        raise HTTPException(status_code=500, detail=str(e)) # Retorna erro 500 (Internal Server Error) com detalhes
+    
 # Função para enviar mensagens para o Telegram
-
-
 async def telegram_send_message(chat_id: str, text: str):
     """
     Envia mensagens para um chat específico no Telegram via bot.
