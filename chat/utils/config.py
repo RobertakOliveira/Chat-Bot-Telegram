@@ -368,34 +368,34 @@ bedrock_config = BedrockConfig()
 
 if __name__ == "__main__":
     # Teste de configuração
-    logger.info("\n===  🔒 Configurações Carregadas  🔒 ===")
-    logger.info("\n=== 🌐 Infraestrutura === ")
-    logger.info(f"- S3 Bucket: {config.S3_BUCKET_NAME}")
-    logger.info(f"- ChromaDB Bucket: {config.S3_BUCKET_CHROMADB}")
-    logger.info(f"- ChromaDB Path: {config.CHROMA_DB_PATH}")
-    logger.info(f"- Log Group: {config.LOG_GROUP}")
+    logger.debug("\n===  🔒 Configurações Carregadas  🔒 ===")
+    logger.debug("\n=== 🌐 Infraestrutura === ")
+    logger.debug(f"- S3 Bucket: {config.S3_BUCKET_NAME}")
+    logger.debug(f"- ChromaDB Bucket: {config.S3_BUCKET_CHROMADB}")
+    logger.debug(f"- ChromaDB Path: {config.CHROMA_DB_PATH}")
+    logger.debug(f"- Log Group: {config.LOG_GROUP}")
 
-    logger.info("\n=== 🪨  Bedrock === ")
-    logger.info(
+    logger.debug("\n=== 🪨  Bedrock === ")
+    logger.debug(
         f"- Embedding Model ID: {bedrock_config.BEDROCK_EMBEDDING_MODEL_ID}")
-    logger.info(f"- Query Model ID: {bedrock_config.BEDROCK_QUERY_MODEL_ID}")
-    logger.info(f"- Batch Size: {bedrock_config.BATCH_SIZE}")
-    logger.info(f"- Max Retries: {bedrock_config.MAX_RETRIES}")
-    logger.info(f"- Batch Delay: {bedrock_config.BATCH_DELAY}s")
-    logger.info(f"- Text Truncate: {bedrock_config.TEXT_TRUNCATE} chars")
+    logger.debug(f"- Query Model ID: {bedrock_config.BEDROCK_QUERY_MODEL_ID}")
+    logger.debug(f"- Batch Size: {bedrock_config.BATCH_SIZE}")
+    logger.debug(f"- Max Retries: {bedrock_config.MAX_RETRIES}")
+    logger.debug(f"- Batch Delay: {bedrock_config.BATCH_DELAY}s")
+    logger.debug(f"- Text Truncate: {bedrock_config.TEXT_TRUNCATE} chars")
 
-    logger.info("\n=== ⚖️  Padrões Jurídicos Carregados === ")
-    logger.info(f"- Chunk Size: {pdf_config.CHUNK_SIZE}")
-    logger.info(f"- Chunk Overlap: {pdf_config.CHUNK_OVERLAP}")
-    logger.info(f"- Max Page Length: {pdf_config.MAX_PAGE_LENGTH}")
-    logger.info(f"- Legal Separators: {pdf_config.LEGAL_SEPARATORS}")
-    logger.info(
+    logger.debug("\n=== ⚖️  Padrões Jurídicos Carregados === ")
+    logger.debug(f"- Chunk Size: {pdf_config.CHUNK_SIZE}")
+    logger.debug(f"- Chunk Overlap: {pdf_config.CHUNK_OVERLAP}")
+    logger.debug(f"- Max Page Length: {pdf_config.MAX_PAGE_LENGTH}")
+    logger.debug(f"- Legal Separators: {pdf_config.LEGAL_SEPARATORS}")
+    logger.debug(
         f"- Ignorar: {[p.pattern for p in pdf_config.LEGAL_IGNORE_PATTERNS]}"
     )
-    logger.info(
+    logger.debug(
         f"- Preservar: {[p.pattern for p in pdf_config.LEGAL_PRESERVE_PATTERNS]}"
     )
-    logger.info(
+    logger.debug(
         f"- Linhas mínimas: {pdf_config.MIN_VALID_CHUNK_LINES}"
     )
 
