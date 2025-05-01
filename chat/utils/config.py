@@ -65,6 +65,13 @@ class ConfigLoader:
                 "/aws/chatbot-consultor-juridico"
             ),
 
+            # Configurações de ChromaDB (nova configuração)
+            "CHROMA_DB_PATH": self._get_param_with_fallback(  # Diretório de persistência
+                "/consultor-juridico/chroma-db-path",
+                "CHROMA_DB_PATH",
+                "chroma_db"
+            ),
+
             # Configurações do Bedrock
             "BEDROCK_EMBEDDING_MODEL_ID": self._get_param_with_fallback(
                 "/consultor-juridico/bedrock-embedding-model-id",
@@ -119,19 +126,6 @@ class ConfigLoader:
                     "7500"  # Margem de segurança para tokenização
                 )),
 
-            # Configurações de ChromaDB (nova configuração)
-            "CHROMA_DB_PATH": self._get_param_with_fallback(  # Diretório de persistência
-                "/consultor-juridico/chroma-db-path",
-                "CHROMA_DB_PATH",
-                "chroma_db"
-            ),
-
-            "S3_BUCKET_CHROMADB": self._get_param_with_fallback(  # Bucket para guardar o ChromaDB
-                "/consultor-juridico/s3-bucket-chromadb",
-                "S3_BUCKET_CHROMADB",
-                f"consultor-juridico-chromadb-{USER}"
-            ),
-
             # Configurações de PDF Processing
             "CHUNK_SIZE": int(
                 self._get_param_with_fallback(
@@ -151,6 +145,13 @@ class ConfigLoader:
                     "MAX_TOKENS",
                     "8000"
                 )),
+            "MIN_VALID_CHUNK_LINES": int(
+                self._get_param_with_fallback(
+                    "/consultor-juridico/min-valid-chunk-lines",
+                    "MIN_VALID_CHUNK_LINES",
+                    "2"
+                )),
+
             "PDF_PREFIX": self._get_param_with_fallback(
                 "/consultor-juridico/pdf-prefix",
                 "PDF_PREFIX",
@@ -164,14 +165,15 @@ class ConfigLoader:
             "LEGAL_IGNORE_PATTERNS": self._get_param_with_fallback(
                 "/consultor-juridico/legal-ignore-patterns",
                 "LEGAL_IGNORE_PATTERNS",
-                r"Documento assinado digitalmente,"
+                r"Documento recebido eletronicamente.*,"
                 r"Fl\. \d+,"
-                r"Página \d+,"
-                r"Processo: \d+-\d+\.\d+\.\d+\.\d+\.\d+,"
+                r"Página \d+\s+de\s+\d+,"
+                r"p\.\s*\d+,"
                 r"https?://[^\s]+,"
                 r"Assinado\s(eletronicamente|digitalmente)\spor:.*?\d{2}/\d{2}/\d{4},"
                 r"N(ú|u)mero\sdo\sdocumento:.*?\d+,"
                 r"Num\.\s\d+\s-\sPág\.\s\d+,"
+                r"(e-STJ Fl\.\d+),"
                 r"^\s*[\W\d]{1,3}\s*$"
             ),
             "LEGAL_PRESERVE_PATTERNS": self._get_param_with_fallback(
@@ -188,14 +190,9 @@ class ConfigLoader:
                 r"§ \d+º.*?(?=\n§|\nArt\.|$),"
                 r"VOTO:.*?(?=ACÓRDÃO:|$),"
                 r"RELATÓRIO:.*?(?=VOTO:|$),"
+                r"Processo: \d+-\d+\.\d+\.\d+\.\d+\.\d+,"
                 r"ACÓRDÃO:.*?(?=PROCESSO:|$)"
-            ),
-            "MIN_VALID_CHUNK_LINES": int(
-                self._get_param_with_fallback(
-                    "/consultor-juridico/min-valid-chunk-lines",
-                    "MIN_VALID_CHUNK_LINES",
-                    "3"
-                ))
+            )
         }
 
     def _get_param_with_fallback(self, ssm_name: str, env_var: str, default: Any) -> Any:
@@ -247,6 +244,15 @@ class PDFConfig:
         self._compiled_separators = None
 
     @property
+    def LEGAL_SEPARATORS(self) -> list[str]:
+        """
+        list[str]: Separadores de texto válidos para divisão, com entradas vazias filtradas.
+
+        Os separadores são obtidos dividindo e limpando uma string de configuração separada por vírgulas.
+        """
+        return [s.strip() for s in config.LEGAL_SEPARATORS.split(',') if s.strip()]
+
+    @property
     def LEGAL_IGNORE_PATTERNS(self) -> list[re.Pattern]:
         """Padrões compilados (cacheados na primeira chamada)"""
         if self._compiled_ignore is None:
@@ -275,15 +281,6 @@ class PDFConfig:
     def CHUNK_OVERLAP(self) -> int:
         """int: Número de caracteres de sobreposição entre chunks consecutivos."""
         return config.CHUNK_OVERLAP
-
-    @property
-    def LEGAL_SEPARATORS(self) -> list[str]:
-        """
-        list[str]: Separadores de texto válidos para divisão, com entradas vazias filtradas.
-
-        Os separadores são obtidos dividindo e limpando uma string de configuração separada por vírgulas.
-        """
-        return [s.strip() for s in config.LEGAL_SEPARATORS.split(',') if s.strip()]
 
     @property
     def MIN_CHUNK_LENGTH(self) -> int:
