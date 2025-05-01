@@ -3,7 +3,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from chat.core.rag_flow import RAGFlow
+from chat.scripts.rag_flow import RAGFlow
 from chat.utils.logger import get_logger
 
 logger = get_logger("test_retrieve")
