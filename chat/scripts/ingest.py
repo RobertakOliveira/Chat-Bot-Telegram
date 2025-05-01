@@ -9,6 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 from chat.core.pdf_processing import process_pdf_from_s3, list_pdfs_in_bucket
 from chat.core.vector_store import initialize_chroma_instance
+from chat.core.pdf_processing import LegalTextProcessor
 from chat.utils.config import config
 from chat.utils.logger import get_logger
 
@@ -37,11 +38,12 @@ def ingest_pdfs(bucket_name: str, collection_name: str):
             Função interna para processar um único arquivo PDF
             Retorna uma lista de documentos/chunks extraídos do PDF
             """
+            processor = LegalTextProcessor()
             start = time.time()
             logger.info(f"🔍 Processando: {pdf['key']}")
 
             # Chama a função que extrai o conteúdo do PDF do S3 e o divide em chunks
-            docs = process_pdf_from_s3(pdf['bucket'], pdf['key'])
+            docs = process_pdf_from_s3(pdf['bucket'], pdf['key'], processor)
             # Verifica se algum conteúdo foi extraído
             if not docs:
                 logger.warning(f"⚠️ Nenhum conteúdo extraído de {pdf['key']}")
