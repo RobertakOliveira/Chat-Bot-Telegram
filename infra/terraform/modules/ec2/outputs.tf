@@ -4,7 +4,8 @@ output "private_key_pem" {
 }
 
 output "instance_id" {
-  value = aws_instance.this.id
+  description = "ID da instância EC2"
+  value       = aws_instance.this.id
 }
 
 output "public_ip" {

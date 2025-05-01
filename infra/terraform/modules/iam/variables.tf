@@ -15,33 +15,53 @@ variable "policy_name" {
 }
 
 variable "policy_json" {
-  description = "Documento JSON com a definição da política"
+  description = "Template da política IAM com placeholders"
   type        = string
   default     = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "S3ReadWrite",
+      "Sid": "S3Permissions",
       "Effect": "Allow",
       "Action": [
         "s3:ListBucket",
         "s3:GetObject",
-        "s3:PutObject"
+        "s3:PutObject",
+        "s3:DeleteObject"
       ],
-      "Resource": "*"
+      "Resource": [
+        "*"
+      ]
     },
     {
-      "Sid": "BedrockAccess",
+      "Sid": "BedrockPermissions",
       "Effect": "Allow",
       "Action": [
         "bedrock:InvokeModel",
         "bedrock:GetModel",
-        "bedrock:ListModels",
-        "bedrock:DescribeModel",
-        "bedrock:List*"
+        "bedrock:ListModels"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "CloudWatchPermissions",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams",
+        "cloudwatch:PutMetricData",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:ListMetrics",
+        "cloudwatch:PutMetricAlarm",
+        "cloudwatch:DescribeAlarms",
+        "cloudwatch:DeleteAlarms"
+      ],
+      "Resource": [
+        "*"
+      ]
     }
   ]
 }

@@ -17,3 +17,13 @@ variable "security_group_id" {
   description = "ID do security group"
   type        = string
 }
+
+variable "log_group_name" {
+  description = "Nome do grupo de logs vindo do módulo cloudwatch"
+  type        = string
+}
+
+variable "iam_instance_profile_name" {
+  description = "Nome do IAM Instance Profile"
+  type        = string
+}

@@ -39,7 +39,7 @@ locals {
 
 resource "aws_s3_object" "juridico_files" {
   for_each = { for f in local.juridico_files : f => f }
-
+  
   bucket = aws_s3_bucket.documento_bucket.id
   key    = "juridicos/${each.value}"
   source = "${var.dataset_folder_path}/${each.value}"

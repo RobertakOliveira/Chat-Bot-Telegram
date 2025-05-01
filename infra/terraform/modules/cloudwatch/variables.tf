@@ -14,3 +14,14 @@ variable "project" {
   type        = string
   default     = "Grupo1Chatbot"
 }
+
+variable "sns_topic_arn" {
+  description = "ARN do tópico SNS para notificações de alarmes"
+  type        = string
+  default     = ""
+}
+
+variable "instance_id" {
+  description = "ID da instância EC2 para monitoramento"
+  type        = string
+}
