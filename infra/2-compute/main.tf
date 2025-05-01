@@ -9,7 +9,7 @@ resource "aws_security_group" "chatbot_sg" {
     description = "API"
     from_port   = 5000
     to_port     = 5000
-    protocol    = "tcp"
+    protocol    = "tcp" # Permite todos os protocolos
     cidr_blocks = ["0.0.0.0/0"] # Considere restringir em produção
   }
 
@@ -17,7 +17,7 @@ resource "aws_security_group" "chatbot_sg" {
     description = "HTTP"
     from_port   = 80
     to_port     = 80
-    protocol    = "tcp"
+    protocol    = "tcp" # Permite todos os protocolos
     cidr_blocks = ["0.0.0.0/0"] # Considere restringir em produção
   }
 
@@ -25,10 +25,19 @@ resource "aws_security_group" "chatbot_sg" {
   description = "Egress for SSM services"
   from_port   = 443
   to_port     = 443
-  protocol    = "tcp"
+  protocol    = "tcp"  # Permite todos os protocolos
   cidr_blocks = ["0.0.0.0/0"]
 
 }
+
+ # Regra de saída mais abrangente para permitir todo o tráfego de saída
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"  # Permite todos os protocolos
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   revoke_rules_on_delete = true
   lifecycle {
