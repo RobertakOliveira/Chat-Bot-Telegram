@@ -13,7 +13,7 @@ bucket_name = os.getenv("BUCKET_NAME")
 dataset_dir = "../../dataset/"
 
 # Nome do perfil configurado com aws configure sso
-session = boto3.Session(profile_name=os.getenv("AWS_PROFILE"))
+session = boto3.Session()
 
 # Inicializa o cliente do serviço S3 usando as credenciais configuradas no ambiente
 s3 = session.client("s3")

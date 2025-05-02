@@ -11,7 +11,7 @@ load_dotenv()
 bucket_name = os.getenv("BUCKET_NAME")
 
 # Nome do perfil AWS
-session = boto3.Session(profile_name=os.getenv("AWS_PROFILE"))
+session = boto3.Session()
 
 # Inicializar clientes
 s3 = session.client("s3")

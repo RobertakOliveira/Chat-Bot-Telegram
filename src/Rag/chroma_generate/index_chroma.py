@@ -7,7 +7,7 @@ from langchain_community.vectorstores import Chroma
 from dotenv import load_dotenv
 load_dotenv()
 
-session = boto3.Session(profile_name=os.getenv("AWS_PROFILE"))
+session = boto3.Session()
 
 print("------------------------------------------------------")
 print("🔄 Inicializando o cliente S3...")

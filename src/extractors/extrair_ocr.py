@@ -14,7 +14,7 @@ output_dir = "../textos_extraidos/"
 
 # Nome do bucket S3 e perfil AWS
 bucket_name = os.getenv("BUCKET_NAME")
-session = boto3.Session(profile_name=os.getenv("AWS_PROFILE"))
+session = boto3.Session()
 s3 = session.client("s3")
 
 # Garante que a pasta de saída local exista
