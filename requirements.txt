@@ -4,6 +4,7 @@ python-dotenv
 PyPDF2
 pdf2image
 pytesseract
+python-telegram-bot
 langchain
 langchain-core
 langchain-community
