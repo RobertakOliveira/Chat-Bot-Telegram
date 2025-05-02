@@ -6,6 +6,9 @@ COPY . .
 
 RUN pip install -r requirements.txt
 
-RUN chmod +x scripts/telegrambot-init.sh
+RUN apt-get update && \
+    apt-get install -y dos2unix && \
+    dos2unix scripts/telegrambot-init.sh && \
+    chmod +x scripts/telegrambot-init.sh
 
 ENTRYPOINT [ "scripts/telegrambot-init.sh" ]
