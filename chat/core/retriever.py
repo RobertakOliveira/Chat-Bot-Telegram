@@ -21,18 +21,12 @@ class ChromaRetriever:
         )
         logger.info(f"🚀 Retriever inicializado com coleção: '{self.collection_name}'")
 
-    def retrieve_documents(self, query_embedding: List[float], doc_type: str = None, case_id: str = None, n_results: int = 3) -> List[Dict]:
+    def retrieve_documents(self, query_embedding: List[float], doc_type: str = None, case_id: str = None, n_results: int = 10) -> List[Dict]:
         try:
             start_time = time.time()
             logger.info(f"🔎 Iniciando busca de documentos... Embedding recebido com {len(query_embedding)} dimensões.")
 
             filters = {}
-
-            if doc_type and doc_type.lower() == "outro":
-                doc_type = None
-            if case_id and case_id.lower() == "outro":
-                case_id = None
-
             if doc_type and case_id:
                 filters = {
                     "$and": [
