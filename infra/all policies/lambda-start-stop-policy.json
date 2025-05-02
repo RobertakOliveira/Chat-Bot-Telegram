@@ -1,0 +1,175 @@
+# KAT - seguem exemplos de políticas para Lambda que inicia e para instâncias EC2 em todas as regiões
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1" # Região onde os recursos serão criados
+}
+
+# IAM Role para as Lambdas
+resource "aws_iam_role" "lambda_role" {
+  name = "ec2_multi_region_control_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# Política para permitir ações EC2 em todas as regiões e logs
+resource "aws_iam_policy" "lambda_policy" {
+  name        = "ec2_multi_region_control_policy"
+  description = "Política para Lambda controlar EC2 em todas as regiões"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ec2:StartInstances",
+          "ec2:StopInstances",
+          "ec2:DescribeInstances",
+          "ec2:DescribeRegions"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+      {
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Effect   = "Allow"
+        Resource = "arn:aws:logs:*:*:*"
+      }
+    ]
+  })
+}
+
+# Vincular política ao role
+resource "aws_iam_role_policy_attachment" "lambda_policy_attach" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.lambda_policy.arn
+}
+
+# Pacote do código Lambda para start
+data "archive_file" "lambda_start_zip" {
+  type        = "zip"
+  source_file = "${path.module}/lambda_functions/ec2_start.py"
+  output_path = "${path.module}/lambda_start.zip"
+}
+
+# Pacote do código Lambda para stop
+data "archive_file" "lambda_stop_zip" {
+  type        = "zip"
+  source_file = "${path.module}/lambda_functions/ec2_stop.py"
+  output_path = "${path.module}/lambda_stop.zip"
+}
+
+# Função Lambda para start
+resource "aws_lambda_function" "ec2_start" {
+  filename      = "lambda_start.zip"
+  function_name = "ec2_start_instances"
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "ec2_start.lambda_handler"
+  runtime       = "python3.8"
+  timeout       = 300 # 5 minutos (pode ser necessário para muitas regiões/instâncias)
+
+  source_code_hash = data.archive_file.lambda_start_zip.output_base64sha256
+
+  environment {
+    variables = {
+      LOG_LEVEL = "INFO"
+    }
+  }
+}
+
+# Função Lambda para stop
+resource "aws_lambda_function" "ec2_stop" {
+  filename      = "lambda_stop.zip"
+  function_name = "ec2_stop_instances"
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "ec2_stop.lambda_handler"
+  runtime       = "python3.8"
+  timeout       = 300 # 5 minutos (pode ser necessário para muitas regiões/instâncias)
+
+  source_code_hash = data.archive_file.lambda_stop_zip.output_base64sha256
+
+  environment {
+    variables = {
+      LOG_LEVEL = "INFO"
+    }
+  }
+}
+
+# Permissão para o CloudWatch invocar a Lambda de start
+resource "aws_lambda_permission" "allow_cloudwatch_start" {
+  statement_id  = "AllowExecutionFromCloudWatchStart"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.ec2_start.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.ec2_start_schedule.arn
+}
+
+# Permissão para o CloudWatch invocar a Lambda de stop
+resource "aws_lambda_permission" "allow_cloudwatch_stop" {
+  statement_id  = "AllowExecutionFromCloudWatchStop"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.ec2_stop.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.ec2_stop_schedule.arn
+}
+
+# Regra do CloudWatch para iniciar instâncias (8h UTC)
+resource "aws_cloudwatch_event_rule" "ec2_start_schedule" {
+  name                = "ec2_start_schedule"
+  description         = "Inicia todas as instâncias EC2 em todas as regiões às 8h UTC"
+  schedule_expression = "cron(0 8 * * ? *)" # 8h UTC todos os dias
+}
+
+# Regra do CloudWatch para parar instâncias (18h UTC)
+resource "aws_cloudwatch_event_rule" "ec2_stop_schedule" {
+  name                = "ec2_stop_schedule"
+  description         = "Para todas as instâncias EC2 em todas as regiões às 18h UTC"
+  schedule_expression = "cron(0 18 * * ? *)" # 18h UTC todos os dias
+}
+
+# Target para a regra de início
+resource "aws_cloudwatch_event_target" "start_ec2" {
+  rule      = aws_cloudwatch_event_rule.ec2_start_schedule.name
+  target_id = "start_ec2_target"
+  arn       = aws_lambda_function.ec2_start.arn
+}
+
+# Target para a regra de parada
+resource "aws_cloudwatch_event_target" "stop_ec2" {
+  rule      = aws_cloudwatch_event_rule.ec2_stop_schedule.name
+  target_id = "stop_ec2_target"
+  arn       = aws_lambda_function.ec2_stop.arn
+}
+
+# Log Groups para monitoramento
+resource "aws_cloudwatch_log_group" "start_lambda_logs" {
+  name              = "/aws/lambda/${aws_lambda_function.ec2_start.function_name}"
+  retention_in_days = 14
+}
+
+resource "aws_cloudwatch_log_group" "stop_lambda_logs" {
+  name              = "/aws/lambda/${aws_lambda_function.ec2_stop.function_name}"
+  retention_in_days = 14
+}
