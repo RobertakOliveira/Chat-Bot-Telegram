@@ -21,6 +21,7 @@ from services.indexing.embedding_service import EmbeddingService
 from services.indexing.document_loader_service import DocumentService
 from repository.chromaDB_repo import ChromaRepository
 
+import glob
 
 # Configuração de logging
 logging.basicConfig(
@@ -131,6 +132,10 @@ def main():
     
     args = parser.parse_args()
     
+    if len(glob.glob('../bd/*')) > 0:
+        logger.info(' ✅ ChromaDB pré-carregado encontrado.')
+        sys.exit(0)
+
     # Executa o carregamento
     result = load_chroma_db(
         filter_patterns=args.filter,
