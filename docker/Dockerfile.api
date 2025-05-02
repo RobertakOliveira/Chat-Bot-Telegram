@@ -11,6 +11,9 @@ COPY app ./app
 COPY chat ./chat
 RUN find ./chat -type d -name "test" -exec rm -rf {} + || true
 
+# Copia a pasta app
+COPY chroma_db ./chroma_db
+
 # Se você tiver um requirements.txt, pode usá-lo assim:
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
