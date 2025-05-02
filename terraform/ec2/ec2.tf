@@ -25,7 +25,7 @@ resource "aws_iam_instance_profile" "ec2-profile" {
 resource "aws_iam_role_policy" "ec2-role-policy" {
   name = "chatbot_ec2_policy"
   role = aws_iam_role.ec2-role.id
-  policy = file("./ec2/ec2-policy.json")
+  policy = file("./ec2/ec2-policy-template.json")
 }
 
 # INSTANCE -----------------------------------------------------------------
