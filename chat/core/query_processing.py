@@ -292,17 +292,6 @@ def preprocess_query(user_query: str, session: UserSession) -> Dict:
     Returns:
         - dict: Resposta do modelo com a classificação da pergunta e geração de embedding."""
     try:
-        # Extrair histórico de mensagens como texto
-        history_text = "\n".join([msg["message"]
-                                 for msg in session.get_history()])
-
-        # Recupere o histórico completo, incluindo perguntas e respostas anteriores
-        history_text = session.get_history_text()
-
-        # Adiciona log de depuração - MUDAR PARA DEBUG EM PRODUÇÃO FINAL
-        logger.info(
-            f"Histórico após adicionar a pergunta: {history_text}")
-
         # 1. Classificação
         classification = classify_query(user_query, session)
 
