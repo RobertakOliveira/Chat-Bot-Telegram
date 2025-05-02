@@ -78,9 +78,53 @@ Caso não rode automaticamente, use `docker compose up --build`.
 
 ---
 
-## Como configurar o Bot do Telegram?
+## ⚙️ Como criar e configurar o Bot do Telegram?
 
 ### 1. Criação do Bot no Telegram
-- Foi utilizado o **@BotFather** para criar o bot.
-- Comando: `/newbot`
-- O bot gerado recebeu um **TOKEN**, que foi salvo para uso posterior.
+
+1. Abra o app do Telegram e procure por [@BotFather](https://t.me/BotFather).
+2. Envie o comando `/start` e depois `/newbot`.
+3. Escolha o nome de exibição do seu bot.
+4. Escolha um nome de usuário para o seu bot (deve terminar em `bot` - ex: `Chatbot_Juridico_bot`).
+5. Copie e salve o **token** que o BotFather fornecer, pois ele será usado no `.env`.
+
+### 2. Configurações possíveis com o BotFather:
+
+* `/setdescription` – Define a descrição do seu bot.
+* `/setabouttext` – Define o texto "Sobre" exibido no perfil do bot.
+* `/setuserpic` – Define uma foto de perfil.
+* `/deletebot` – Remove permanentemente o bot.
+* `/setcommands` – Define comandos personalizados visíveis no menu do bot.
+
+  **Exemplos de uso do `/setcommands`:**
+
+  ```
+  start - Inicia o bot
+  ajuda - Mostra informações sobre o funcionamento do bot
+  sobre - Exibe informações sobre o projeto
+  ```
+---
+
+## ❗Problemas encontrados durante o desenvolvimento do projeto
+
+Durante o processo de desenvolvimento e implantação do chatbot, nos deparamos com alguns obstáculos que exigiram mudanças estratégicas na arquitetura do projeto. Abaixo estão alguns dos principais empecilhos encontrados:
+
+---
+
+### 🔹 Limite de tamanho das bibliotecas na AWS Lambda
+
+Logo no início da atividade, ao tentar implementar o chatbot em uma função AWS Lambda, foi identificado que o **tamanho das bibliotecas necessárias ultrapassava o limite máximo** permitido para as layers, impossibilitando a execução da lógica do bot nesse formato.
+
+✅ **Solução:**
+Foi adotada a abordagem com **EC2 + Docker**, permitindo rodar o bot com todas as dependências necessárias sem restrições de tamanho.
+
+---
+
+### 🔹 Exigência de certificado HTTPS válido pelo Telegram
+
+Para utilizar Webhook com a API do Telegram, o endpoint do servidor precisa obrigatoriamente estar acessível via **HTTPS, com um certificado digital válido**. Portanto, seria necessário configurar um domínio público e certificado SSL, o que aumentaria a complexidade e o custo da infraestrutura.
+
+✅ **Solução:**
+Foi adotado o modelo com **Polling**, onde o próprio bot consulta periodicamente o Telegram, em vez de receber requisições sempre que chega uma nova mensagem. Essa abordagem **elimina a necessidade de HTTPS**, facilitando o desenvolvimento do projeto.
+
+---
