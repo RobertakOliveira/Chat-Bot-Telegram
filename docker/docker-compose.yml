@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  bot_telegram:
+    build:
+      context: ..  # Aponte para a raiz do projeto
+      dockerfile: docker/Dockerfile
+    container_name: telegram_bot
+    restart: always
+    env_file:
+      - ../.env
+    volumes:
+      - ../dataset:/dataset:ro
+      - ~/.aws:/root/.aws:ro
+    environment:
+      - AWS_PROFILE=leonardo-nogueira
+
+    

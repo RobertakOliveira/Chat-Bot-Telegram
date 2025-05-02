@@ -1,0 +1,20 @@
+FROM python:3.11-slim
+
+# Dependências do sistema (OCR/PDF)
+RUN apt-get update && apt-get install -y \
+    poppler-utils \
+    tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copia o conteúdo do projeto (contexto é a raiz)
+COPY .. .
+
+# Instala dependências e prepara entrypoint
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt && \
+    chmod +x /app/docker/entrypoint.sh
+
+# Define entrypoint (executa scripts + bot)
+ENTRYPOINT ["/app/docker/entrypoint.sh"]
