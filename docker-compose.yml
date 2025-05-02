@@ -23,5 +23,13 @@ services:
     networks:
       - chatbotnetwork
     env_file: .env
+  telegrambot:
+    build:
+      dockerfile: ../dockerfiles/telegrambot/dockerfile
+      context: ./telegrambot
+    env_file:
+      - .env.telegrambot
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 networks:
   chatbotnetwork:
