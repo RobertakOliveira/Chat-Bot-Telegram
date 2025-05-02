@@ -89,8 +89,8 @@ data "aws_iam_policy_document" "docs_bucket_policy" {
 resource "aws_s3_object" "juridicos" {
   for_each = fileset("${path.module}/../juridicos/", "**/*.pdf")
 
-  bucket = aws_s3_bucket.docs.id
-  key    = each.value
+  bucket = aws_s3_bucket.docs.bucket
+  key    = "juridicos/${each.value}"
   source = "${path.module}/../juridicos/${each.value}"
   etag   = filemd5("${path.module}/../juridicos/${each.value}")
 
