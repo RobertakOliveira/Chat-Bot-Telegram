@@ -26,3 +26,9 @@ variable "bucket_name" {
   description = "Nome do bucket S3 onde serão armazenados os embeddings"
   type        = string
 }
+
+variable "bot_token" {
+  description = "Token do Bot do Telegram"
+  type        = string
+  sensitive   = true
+}
