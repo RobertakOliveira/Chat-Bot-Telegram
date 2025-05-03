@@ -1,5 +1,3 @@
-
-
 resource "aws_security_group" "chatbot_sg" {
   name        = "chatbot-sg-${var.environment}"
   description = "Security group for EC2 instance with SSM"
@@ -52,7 +50,14 @@ resource "aws_instance" "chatbot_server" {
   subnet_id               = var.subnet_id
   vpc_security_group_ids  = [aws_security_group.chatbot_sg.id]
   iam_instance_profile    = aws_iam_instance_profile.chatbot_profile.name
-  user_data               = filebase64("${path.module}/bootstrap.sh")
+
+  user_data= base64encode(templatefile("${path.module}/bootstrap.sh.tpl", {
+  telegram_bot_token     = var.telegram_bot_token
+  api_secret_key         = var.api_secret_key
+  environment           = var.environment
+
+  }))
+  
 
   tags = {
     Name        = "Minhainstance1"

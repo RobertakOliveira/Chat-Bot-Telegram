@@ -43,3 +43,15 @@ variable "s3_bucket_arn" {
   description = "ARN do bucket S3 para documentos"
   type        = string
 }
+
+variable "telegram_bot_token" {
+  type        = string
+  description = "Token do Bot do Telegram (obtido com @juridico_compasso_grupo_6_bot)"  #
+  sensitive   = true # Opcional: evita que o valor seja exibido em logs
+}
+
+variable "api_secret_key"{ 
+  type        = string
+  description = "Chave secreta da API"
+  sensitive   = true # Opcional: evita que o valor seja exibido em logs
+}
