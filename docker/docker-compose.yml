@@ -14,5 +14,6 @@ services:
       - ~/.aws:/root/.aws:ro
     environment:
       - AWS_PROFILE=leonardo-nogueira
-
+    ports:
+      - "8080:8080"  # Adicionando mapeamento de portas (se necessário)
     
