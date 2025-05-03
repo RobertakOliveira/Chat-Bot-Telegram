@@ -48,7 +48,18 @@ variable "common_tags" {
     ManagedBy  = "Terraform"
     Repository = "https://github.com/Compass-pb-aws-2025-JANEIRO/sprints-7-8-pb-aws-janeiro"
     CostCenter = "TI"
-
   }
 }
+
+  variable "api_secret_key" {
+    description = "Chave secreta da API"
+    type        = string
+  }
+
+  variable "telegram_bot_token" {
+    description = "Token do bot do Telegram"
+    type        = string
+  }
+
+
 

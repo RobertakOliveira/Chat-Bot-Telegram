@@ -18,6 +18,9 @@ module "compute" {
   owner_tag      = var.owner_tag
   s3_bucket_name = module.storage.docs_bucket_name
   s3_bucket_arn  = module.storage.docs_bucket_arn
+    api_secret_key     = var.api_secret_key
+  telegram_bot_token = var.telegram_bot_token
+
 
 }
 
@@ -35,4 +38,11 @@ module "monitoring" {
   aws_region  = var.aws_region
   instance_id = module.compute.instance_id
   common_tags = var.common_tags
+}
+
+module "lambda" {
+  source        = "./4-lambda"
+  environment   = var.environment
+  project_name  = var.project_name
+  common_tags   = var.common_tags
 }
