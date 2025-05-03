@@ -14,12 +14,17 @@ def main():
         .read_timeout(Config.TEMPO_ESPERA_RESPOSTA) \
         .write_timeout(Config.TEMPO_ESPERA_RESPOSTA) \
         .build()
-
+    
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("voltar", voltar))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    application.run_polling()
+    
+    # Use webhook instead of polling
+    application.run_webhook(
+        listen='0.0.0.0',
+        port=Config.WEBHOOK_PORT,
+        webhook_url=Config.WEBHOOK_URL
+    )
 
 if __name__ == '__main__':
     main()
