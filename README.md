@@ -1,20 +1,15 @@
-# 🤖 JusBot - Assistente Jurídico via Telegram (Em Desenvolvimento)
+# 🤖 JusBot - Assistente Jurídico via Telegram
 
-> **Status do Projeto**: Em desenvolvimento ativo
+📋 Descrição
+JusBot é um assistente jurídico inteligente que utiliza processamento de linguagem natural e recuperação de informações para analisar documentos jurídicos. Implementado como um bot do Telegram, o JusBot pode processar textos jurídicos, gerar embeddings semânticos e responder consultas jurídicas com base em uma base de conhecimento estruturada.
 
-JusBot é um assistente jurídico baseado em IA que responde a perguntas sobre documentos jurídicos através do Telegram. 
-Utilizando tecnologias como Amazon Bedrock, ChromaDB e LangChain, o bot consulta documentos PDF para fornecer respostas.
+🌟 Funcionalidades
 
-## ✨ Características (Implementadas)
-
-- **Consulta de documentos jurídicos**: Responde a perguntas baseadas apenas no conteúdo dos documentos disponíveis
-- **Interface amigável via Telegram**: Menu intuitivo e interações personalizadas
-
-## 🚧 Em Desenvolvimento
-
-Este projeto está em fase de implementação, com as seguintes funcionalidades planejadas:
-
-
+Processamento de Documentos Jurídicos: Extração automática de texto de PDFs
+Geração de Embeddings: Transformação de textos jurídicos em representações vetoriais
+Indexação Avançada: Armazenamento otimizado de embeddings para consulta rápida
+Consulta Contextual: Responde perguntas com base nos documentos jurídicos indexados
+Interface via Telegram: Acesso intuitivo através do aplicativo Telegram
 ## 🛠️ Tecnologias Utilizadas
 
 - **Python**: Linguagem de programação principal
@@ -89,25 +84,34 @@ python main.py
 ## 📁 Estrutura do Projeto
 
 ```
-sprints-7-8-pb-aws-janeiro/
-│
-├── main.py                  # Ponto de entrada da aplicação, interface Telegram
-│
-├── README.md                # Documentação do projeto
-├── requirements.txt         # Dependências do projeto
-├── .env                     # Arquivo de variáveis de ambiente
-├── .gitignore               # Arquivos ignorados pelo git
-│
-├── telegram_bot/            # Módulo de processamento do bot
-│   ├── __init__.py          # Torna o diretório um pacote Python
-│   └── telegram_bot.py      # Lógica principal de processamento
-│
-├── Rag_Pipeline.py          # Pipeline de RAG (Retrieval Augmented Generation)
-├── S3_Loader.py             # Carregar documentos do S3 da AWS
-│
-├── assets/                  #  Recursos do projeto
-│
-└── dataset/                 # Pasta para documentos jurídicos
+jusbot/
+├── assets/                # Recursos gráficos
+├── dataset/               # Documentos jurídicos organizados por processo
+│   
+├── docker/                # Configurações de conteinerização
+│   ├── docker-compose.yml # Configuração dos serviços
+│   ├── dockerfile         # Instruções de build da imagem
+│   └── entrypoint.sh      # Script de inicialização
+├── src/                   # Código-fonte do projeto
+│   ├── embeddings_generate/ # Geração de embeddings
+│   │   └── Embbeding_Generator.py
+│   ├── extractors/        # Extração de texto de documentos
+│   │   ├── extrair_ocr.py
+│   │   └── S3_Loader.py   # Gerenciamento de arquivos no S3
+│   ├── Rag/               # Retrieval Augmented Generation
+│   │   ├── chroma_conector.py
+│   │   ├── chroma_generate/
+│   │   ├── JusBot.py      # Núcleo do assistente
+│   │   └── prompt_template.py
+│   ├── telegram_bot/      # Interface do Telegram
+│   │   ├── bot.py         # Configuração do bot
+│   │   ├── handlers.py    # Manipuladores de comandos
+│   │   └── rag_interface.py # Integração com o RAG
+│   └── textos_extraidos/  # Textos processados
+├── terraform/             # Infraestrutura como código
+│   └── main.tf            # Definição de recursos AWS
+├── .env                   # Variáveis de ambiente
+└── requirements.txt       # Dependências Python
 ```
 
 ## 📝 Arquivos Principais
@@ -131,4 +135,6 @@ sprints-7-8-pb-aws-janeiro/
 
 ---
 
-**Nota**: Este projeto está em desenvolvimento ativo e algumas funcionalidades podem estar incompletas ou sujeitas a alterações.
+<div align="center">
+🤖 JusBot - Tornando o conhecimento jurídico acessível através da inteligência artificial
+</div>
