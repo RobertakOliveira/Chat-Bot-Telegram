@@ -2,6 +2,10 @@ import logging
 import time
 import uuid
 
+import sys
+sys.path.insert(0, '../src/')
+from services.generate_embedding_query_service import GenerateEmbeddingQueryService
+
 logger = logging.getLogger("rag_service")
 
 class RAGService:
@@ -17,6 +21,7 @@ class RAGService:
         self.vector_search_service = vector_search_service
         self.llm_service = llm_service
         self.max_context_docs = max_context_docs
+        self.geqs = GenerateEmbeddingQueryService(self.llm_service.llm)
     
     def process_query(self, query, chat_id):
         """
@@ -34,25 +39,35 @@ class RAGService:
         process_start = time.time()
         
         try:
+            chat_history = self.llm_service.graph_service.get_chat_history(chat_id)
+
+            geqs_result = self.geqs.generate_query(chat_history, query) if len(chat_history) > 0 else {"worth_searching": True, "refined_query": query}
+
             # Busca documentos relevantes
-            docs = self.vector_search_service.similarity_search(query, k=self.max_context_docs)
-            
-            # Log dos documentos usados
-            logger.info(f"[{query_id}] Documentos selecionados para o contexto:")
+            docs = []
             document_sources = []
-            for i, doc in enumerate(docs):
-                source = "Desconhecido"
-                if hasattr(doc, 'metadata') and doc.metadata:
-                    source = doc.metadata.get('source', doc.metadata.get('file_path', 'Desconhecido'))
-                document_sources.append(source)
-                logger.info(f"[{query_id}]   {i+1}. {source}")
+            context = '--- Nenhum trecho adicional de algum documento pareceu relevante para a pergunta do usuário ---'
             
-            # Construindo o contexto
-            logger.debug(f"[{query_id}] Construindo contexto a partir de {len(docs)} documentos")            
-            context_start = time.time()
-            context = "\n\n".join([doc.page_content for doc in docs])
-            logger.debug(f"[{query_id}] Contexto construído com {len(context)} caracteres")
-            context_time = time.time() - context_start
+            # GEQS approved searching documents.
+            if geqs_result['worth_searching']:
+                query = geqs_result['refined_query']
+                docs = self.vector_search_service.similarity_search(query, k=self.max_context_docs)
+            
+                # Log dos documentos usados
+                logger.info(f"[{query_id}] Documentos selecionados para o contexto:")
+                for i, doc in enumerate(docs):
+                    source = "Desconhecido"
+                    if hasattr(doc, 'metadata') and doc.metadata:
+                        source = doc.metadata.get('source', doc.metadata.get('file_path', 'Desconhecido'))
+                    document_sources.append(source)
+                    logger.info(f"[{query_id}]   {i+1}. {source}")
+                
+                # Construindo o contexto
+                logger.debug(f"[{query_id}] Construindo contexto a partir de {len(docs)} documentos")            
+                context_start = time.time()
+                context = "\n\n".join([doc.page_content for doc in docs])
+                logger.debug(f"[{query_id}] Contexto construído com {len(context)} caracteres")
+                context_time = time.time() - context_start
             
             # Cria o prompt RAG
             logger.debug(f"[{query_id}] Criando prompt RAG")
