@@ -1,25 +1,27 @@
 import boto3
-
+import os
 
 def lambda_handler(event, context):
-
-    # Listar as regioes
+    project_tag = os.environ.get('PROJECT_TAG', 'consultor-juridico')
     ec2_client = boto3.client('ec2')
-    regions = [region['RegionName']
-               for region in ec2_client.describe_regions()['Regions']]
+    regions = [region['RegionName'] for region in ec2_client.describe_regions()['Regions']]
 
-    # Buscar em todas as regioes
     for region in regions:
         ec2 = boto3.resource('ec2', region_name=region)
-
         print("Region:", region)
 
-        # Filtrar somente as instancias ligadas
+        # Filtrar instâncias rodando com a tag Project específica
         instances = ec2.instances.filter(
-            Filters=[{'Name': 'instance-state-name',
-                      'Values': ['running']}])
+            Filters=[
+                {'Name': 'instance-state-name', 'Values': ['running']},
+                {'Name': 'tag:Project', 'Values': [project_tag]}
+            ])
 
-        # Parar as Instancias
         for instance in instances:
             instance.stop()
-            print('Stopped instance: ', instance.id)
+            print(f'Stopped instance: {instance.id} ({instance.tags})')
+
+    return {
+        'statusCode': 200,
+        'body': f'Stop EC2 instances with Project tag: {project_tag} completed'
+    }
