@@ -1,0 +1,17 @@
+site_name: Oráculo OABot Documentation
+nav:
+  - Home: index.md
+  - Pipelines:
+      - S3: pipelines/s3/README.md
+      - Lambda: pipelines/lambda/README.md
+      - IAM: pipelines/iam/README.md
+      - ECR: pipelines/ecr/README.md
+      - API: pipelines/api/README.md
+  - Tecnologias e Funcionalidades: tecnologias.md
+  - Equipe Técnica: equipe.md
+theme:
+  name: material
+  palette:
+    scheme: auto 
+    primary: indigo
+    accent: pink
