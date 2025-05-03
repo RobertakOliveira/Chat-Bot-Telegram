@@ -12,10 +12,12 @@ def lambda_handler(event, context):
 
         # Filtrar instâncias desligadas com a tag Project específica
         instances = ec2.instances.filter(
-            Filters=[
-                {'Name': 'instance-state-name', 'Values': ['stopped']},
-                {'Name': 'tag:Project', 'Values': [project_tag]}
-            ])
+    Filters=[
+        {'Name': 'instance-state-name', 'Values': ['stopped']},
+        {'Name': 'tag:Project', 'Values': [os.environ['PROJECT_TAG']]},
+        {'Name': 'tag:Name', 'Values': [f"chatbot-instance-{os.environ['ENVIRONMENT']}"]}
+    ]
+)
 
         for instance in instances:
             instance.start()
