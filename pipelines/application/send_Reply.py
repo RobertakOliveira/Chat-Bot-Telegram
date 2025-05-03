@@ -1,8 +1,9 @@
 import json
 import urllib3
 import time
+import os
 
-BOT_TOKEN=""
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 
 http = urllib3.PoolManager()
