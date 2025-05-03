@@ -7,3 +7,4 @@ chromadb == 0.4.24
 pypdf == 5.4.0
 pdfminer.six == 20250416
 pydantic == 2.11.3
+awslambdaric == 3.0.2
