@@ -54,6 +54,7 @@ resource "aws_lambda_function" "embedding_db" {
       INPUT_PREFIX  = "input/chroma_db/"
       OUTPUT_BUCKET = var.bucket_name
       OUTPUT_PREFIX = "output/chroma_db/"
+      BOT_TOKEN = var.bot_token
     }
   }
 
