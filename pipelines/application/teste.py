@@ -27,7 +27,7 @@ def sync_s3_folder(bucket_name: str, prefix: str, local_dir: str):
     print(f"✅ Sincronizado s3://{bucket_name}/{prefix} → {local_dir}/")
  
 # 1. Define bucket e pasta local
-bucket_name = "bucketembeddingssprint7"
+bucket_name = os.environ["OUTPUT_BUCKET"]
 prefix = "chroma_db/"
 persist_directory = "/tmp/chroma_db"
  
