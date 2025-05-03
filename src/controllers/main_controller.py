@@ -20,6 +20,14 @@ from src.services.indexing.embedding_service import EmbeddingService
 from src.services.retrieval_and_generation.vector_search_service import VectorSearchService
 from src.services.retrieval_and_generation.rag_service import RAGService
 from src.repository.chromaDB_repo import ChromaRepository
+
+from langchain.chains.conversation.memory import ConversationSummaryBufferMemory
+from langgraph.graph import StateGraph, START, END
+from langgraph.graph.message import add_messages
+from langchain_core.messages import trim_messages
+from typing_extensions import TypedDict
+from typing import Annotated
+
 # Instanciações
 _, bedrock_client, _ = Config.get_aws_clients()
 
@@ -54,13 +62,15 @@ def Main():
 
 def ProcessQuery():
     data = request.get_json()
-    query = data.get("query", "")
-    chat_history = data.get("chat_history", [])
+    query = data.get("query", None)
+    chat_id = data.get("chat_id", None)
 
-    if not query:
+    if query is None:
         return jsonify({"error": "query is required"}), 400
+    elif chat_id is None:
+        return jsonify({"error": "chat_id is required"}), 400
 
-    result = rag_service.process_query(query, chat_history)
+    result = rag_service.process_query(query, chat_id)
     return jsonify(result)
 
 

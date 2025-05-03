@@ -18,7 +18,7 @@ class RAGService:
         self.llm_service = llm_service
         self.max_context_docs = max_context_docs
     
-    def process_query(self, query, chat_history=None):
+    def process_query(self, query, chat_id):
         """
         Processa uma query usando RAG
         
@@ -58,16 +58,10 @@ class RAGService:
             logger.debug(f"[{query_id}] Criando prompt RAG")
             messages = self.llm_service.create_rag_prompt(context, query)
             
-            # Adiciona histórico de chat se existir
-            if chat_history:
-                logger.debug(f"[{query_id}] Adicionando histórico de chat ({len(chat_history)} mensagens)")
-                chat_messages = self.llm_service.format_chat_history(chat_history)
-                messages = chat_messages + messages
-            
             # Gera a resposta
             logger.info(f"[{query_id}] Gerando resposta com LLM...")
             llm_start = time.time()
-            response = self.llm_service.generate_response(messages)
+            response = self.llm_service.generate_response(messages, chat_id, query)
             llm_time = time.time() - llm_start
             logger.info(f"[{query_id}] ✅ Resposta gerada com sucesso em {llm_time:.4f}s")
             
