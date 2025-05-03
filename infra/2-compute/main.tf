@@ -45,43 +45,37 @@ resource "aws_security_group" "chatbot_sg" {
 }
 
 resource "aws_instance" "chatbot_server" {
-  ami                    = "ami-084568db4383264d4"  # AMI para Ubuntu 22.04 LTS (verifique se esta AMI é válida na sua região)
-  instance_type           = "t2.micro"              # Tipo de instância
-  subnet_id               = var.subnet_id
-  vpc_security_group_ids  = [aws_security_group.chatbot_sg.id]
-  iam_instance_profile    = aws_iam_instance_profile.chatbot_profile.name
+  ami                    = "ami-084568db4383264d4"
+  instance_type          = "t2.micro"
+  subnet_id              = var.subnet_id
+  vpc_security_group_ids = [aws_security_group.chatbot_sg.id]
+  iam_instance_profile   = aws_iam_instance_profile.chatbot_profile.name
 
-  user_data= base64encode(templatefile("${path.module}/bootstrap.sh.tpl", {
-  telegram_bot_token     = var.telegram_bot_token
-  api_secret_key         = var.api_secret_key
-  environment           = var.environment
-
+  user_data = base64encode(templatefile("${path.module}/bootstrap.sh.tpl", {
+    telegram_bot_token = var.telegram_bot_token
+    api_secret_key     = var.api_secret_key
+    environment        = var.environment
   }))
-  
 
-  tags = {
-    Name        = "Minhainstance1"
-    Project     = "Terraformifest"
-    CostCenter  = "I123"
-    Environment = var.environment
-    Owner       = var.owner_tag
-    ManagedBy   = "terraform"
-  }
+  tags = merge(var.common_tags, {
+    Name      = "chatbot-instance-${var.environment}"
+    Project   = var.project_name
+    Component = "chatbot"
+    AutoStart = "true"
+  })
 
   root_block_device {
     volume_size = 30
     volume_type = "gp3"
   }
 
-  volume_tags = {
-    Name        = "Example Volume"
-    Project     = "MyProject"
-    CostCenter  = "C123"
-    ManagedBy   = "terraform"
-    Environment = var.environment
-    Owner       = var.owner_tag
-  }
+  volume_tags = merge(var.common_tags, {
+    Name      = "volume-chatbot-${var.environment}"
+    Project   = var.project_name
+    Component = "chatbot"
+  })
 }
+
 resource "aws_eip" "chatbot_eip" {
   instance = aws_instance.chatbot_server.id
   tags = merge(var.common_tags, {
