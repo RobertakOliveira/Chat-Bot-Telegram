@@ -33,3 +33,4 @@ terraform.tfvars
 *.bak
 *.tmp
 terraform/sprint7-key.pem
+.env
