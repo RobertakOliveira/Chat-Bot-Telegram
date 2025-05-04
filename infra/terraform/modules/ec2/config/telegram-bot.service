@@ -1,0 +1,16 @@
+[Unit]
+Description=Telegram Bot Service
+After=network.target chatbot.service
+
+[Service]
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/opt/chatbot
+Environment="PATH=/opt/chatbot/venv/bin"
+Environment="TELEGRAM_TOKEN=${TELEGRAM_TOKEN}"
+ExecStart=/opt/chatbot/venv/bin/python -m app.bots.botTelegram
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target 

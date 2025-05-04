@@ -47,78 +47,22 @@ resource "aws_instance" "this" {
 
   user_data = <<-EOF
             #!/bin/bash
-            # Instalar o agente do CloudWatch
-            sudo yum install -y amazon-cloudwatch-agent
+            # Exportar variável do bucket S3
+            export S3_BUCKET_NAME="${var.s3_bucket_name}"
 
-            # Criar arquivo de configuração
-            cat <<'CONFIG' > /tmp/amazon-cloudwatch-agent.json
-            {
-              "logs": {
-                "logs_collected": {
-                  "files": {
-                    "collect_list": [
-                      {
-                        "file_path": "/var/log/messages",
-                        "log_group_name": "${var.log_group_name}",
-                        "log_stream_name": "{instance_id}"
-                      },
-                      {
-                        "file_path": "/var/log/cloud-init-output.log",
-                        "log_group_name": "${var.log_group_name}",
-                        "log_stream_name": "{instance_id}"
-                      },
-                      {
-                        "file_path": "/var/log/chatbot.log",
-                        "log_group_name": "${var.log_group_name}",
-                        "log_stream_name": "{instance_id}-chatbot"
-                      }
-                    ]
-                  }
-                }
-              },
-              "metrics": {
-                "metrics_collected": {
-                  "cpu": {
-                    "resources": ["*"],
-                    "measurement": [
-                      "cpu_usage_idle",
-                      "cpu_usage_iowait",
-                      "cpu_usage_user",
-                      "cpu_usage_system"
-                    ],
-                    "totalcpu": true
-                  },
-                  "disk": {
-                    "resources": ["/"],
-                    "measurement": [
-                      "used_percent"
-                    ]
-                  },
-                  "mem": {
-                    "measurement": [
-                      "mem_used_percent"
-                    ]
-                  }
-                }
-              }
-            }
-            CONFIG
+            # Criar diretório para scripts
+            mkdir -p /opt/chatbot/scripts
+            chmod 755 /opt/chatbot/scripts
 
-            # Mover o arquivo de configuração para o local correto
-            sudo mv /tmp/amazon-cloudwatch-agent.json /opt/aws/amazon-cloudwatch-agent/etc/
+            # Copiar script de deploy
+            cat << 'DEPLOY_SCRIPT' > /opt/chatbot/scripts/deploy.sh
+            ${file("${path.module}/config/deploy.sh")}
+            DEPLOY_SCRIPT
 
-            # Iniciar o agente
-            sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
-            sudo systemctl start amazon-cloudwatch-agent
-            sudo systemctl enable amazon-cloudwatch-agent
+            # Dar permissões de execução
+            chmod +x /opt/chatbot/scripts/deploy.sh
 
-            # Criar diretório para logs do chatbot
-            sudo mkdir -p /var/log/chatbot
-            sudo touch /var/log/chatbot.log
-            sudo chmod 666 /var/log/chatbot.log
-
-            # Seus outros comandos
-            pip install --upgrade pip
-            pip install -r ../config/requirements.txt
+            # Executar script de deploy
+            /opt/chatbot/scripts/deploy.sh
             EOF
 }

@@ -27,3 +27,8 @@ variable "iam_instance_profile_name" {
   description = "Nome do IAM Instance Profile"
   type        = string
 }
+
+variable "s3_bucket_name" {
+  description = "Nome do bucket S3 onde estão os arquivos da aplicação"
+  type        = string
+}
