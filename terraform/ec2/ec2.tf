@@ -121,14 +121,6 @@ resource "aws_security_group" "ec2_sg" {
   vpc_id = aws_vpc.chatbot_vpc.id
 }
 
-resource "aws_vpc_security_group_ingress_rule" "allow_http_ir" {
-    security_group_id = aws_security_group.ec2_sg.id
-    ip_protocol = "tcp"
-    cidr_ipv4 = "0.0.0.0/0" # change this to Telegram's IP
-    from_port = 80
-    to_port = 80
-}
-
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_ip_ir" {
     security_group_id = aws_security_group.ec2_sg.id
     ip_protocol = "tcp"
@@ -136,14 +128,6 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_ip_ir" {
     from_port = 22
     to_port = 22
 }
-
-#resource "aws_vpc_security_group_ingress_rule" "allow_ssh_sg_ir" {
-#    security_group_id = aws_security_group.ec2_sg.id
-#    ip_protocol = "tcp"
-#    from_port = 22
-#    to_port = 22
-#    referenced_security_group_id = aws_security_group.ec2_sg.id # needed to allow EC2 endpoint connection
-#}
 
 resource "aws_vpc_security_group_egress_rule" "sg_er_1" {
     security_group_id = aws_security_group.ec2_sg.id
