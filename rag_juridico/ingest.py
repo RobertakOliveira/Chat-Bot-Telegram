@@ -102,17 +102,24 @@ class DocumentProcessor:
     def create_vector_store(self, chunks: List[Document]):
         self.logger.info("🔄 Gerando embeddings...")
 
-        # Criação correta da instância Chroma
-        vectordb = Chroma(
-            documents=chunks,
-            embedding=self.embedding_model,
-            persist_directory=self.config.PERSIST_DIR,
-            collection_name=self.config.COLLECTION_NAME
-        )
+        if not os.path.exists(self.config.PERSIST_DIR) or not os.listdir(self.config.PERSIST_DIR):
+            self.logger.info("📁 Base vetorial não encontrada. Criando nova com os chunks...")
+            self.vectordb = Chroma.from_documents(
+                documents=chunks,
+                embedding=self.embedding_model,
+                persist_directory=self.config.PERSIST_DIR,
+                collection_name=self.config.COLLECTION_NAME
+            )
+        else:
+            self.logger.info("📁 Base vetorial já existente. Carregando...")
+            self.vectordb = Chroma(
+                embedding_function=self.embedding_model,
+                persist_directory=self.config.PERSIST_DIR,
+                collection_name=self.config.COLLECTION_NAME
+            )
+            self.vectordb.add_documents(chunks)
 
-        vectordb.add_documents(chunks)
         self.vectordb.persist()
-        
         self.logger.info(f"📦 Base criada com {self.vectordb._collection.count()} vetores")
 
     # ======CONSULTA À BASE VETORIAL======
