@@ -58,21 +58,23 @@ resource "aws_instance" "chatbot_server" {
   }))
 
   tags = merge(var.common_tags, {
-    Name      = "chatbot-instance-${var.environment}"
-    Project   = var.project_name
-    Component = "chatbot"
-    AutoStart = "true"
+    Name        = "chatbot-instance-${var.environment}",
+    Project     = var.project_name,
+    Component   = "chatbot",
+    AutoStart   = "true",
+    CostCenter  = "TI"
   })
 
   root_block_device {
-    volume_size = 30
-    volume_type = "gp3"
+    volume_size = 8    # Reduzido para 8GB (valor padrão)
+    volume_type = "gp2" # Tipo padrão mais aceito
   }
 
   volume_tags = merge(var.common_tags, {
-    Name      = "volume-chatbot-${var.environment}"
-    Project   = var.project_name
-    Component = "chatbot"
+    Name        = "volume-chatbot-${var.environment}",
+    Project     = var.project_name,
+    Component   = "chatbot",
+    CostCenter  = "TI"
   })
 }
 
