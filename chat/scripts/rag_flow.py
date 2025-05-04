@@ -7,7 +7,7 @@ from chat.core.generator import generate_response
 from chat.core.query_processing import preprocess_query, UserSession
 from chat.utils.logger import get_logger
 
-logger = get_logger("rag_flow")
+logger = get_logger("Fluxo de Recuperação e Geração de Respostas Jurídicas (RAG)")
 
 
 class RAGFlow:
@@ -45,7 +45,7 @@ class RAGFlow:
                 logger.error(f"❌ Erro no pré-processamento: {processed_result['error']}")
                 raise ValueError(f"Falha no pré-processamento: {processed_result['error']}")
                 
-            logger.info(f"✅ Consulta pré-processada com sucesso: {processed_result['refined_query']}")
+            logger.info(f"🔎 Consulta pré-processada com sucesso: {processed_result['refined_query']}")
             return processed_result
             
         except Exception as e:
@@ -53,7 +53,7 @@ class RAGFlow:
             raise
     
     def get_relevant_documents(self, query_embedding: List[float], doc_type: str = None, 
-                             case_id: str = None, n_results: int = 3) -> List[Dict]:
+                             case_id: str = None, n_results: int = 10) -> List[Dict]:
         """
         Recupera documentos relevantes com base no embedding e filtros
         
@@ -82,7 +82,7 @@ class RAGFlow:
             if docs:
                 logger.info(f"📚 {len(docs)} documentos recuperados com sucesso")
                 for i, doc in enumerate(docs):
-                    logger.info(f"📝 Doc {i+1}: {doc.get('content')[:300]}...")
+                    logger.info(f"📄 Doc {i+1}: {doc.get('content')[:300]}...")
             else:
                 logger.warning("⚠️ Nenhum documento relevante encontrado")
                 
@@ -95,24 +95,36 @@ class RAGFlow:
     def generate_answer(self, context: str, query: str) -> str:
         """
         Gera uma resposta com base no contexto e na consulta
-        
-        Args:
-            context: Contexto documental concatenado
-            query: Consulta refinada do usuário
-            
-        Returns:
-            str: Resposta gerada
         """
         try:
             logger.info(f"🧠 Gerando resposta para consulta: {query[:100]}...")
-            return generate_response(context, query)
+            response = generate_response(context, query)
             
+            # Verificação para impedir respostas negativas quando há documentos relevantes
+            if "não está disponível" in response or "não contém informações" in response:
+                # Verifica se os termos da consulta aparecem no contexto
+                query_terms = query.lower().split()
+                relevant_terms_in_context = [term for term in query_terms 
+                                            if term in context.lower() and len(term) > 3]
+                
+                if relevant_terms_in_context:
+                    logger.warning("⚠️ Modelo retornou 'informação não disponível' mas documentos contêm termos relevantes")
+                    # Tenta novamente com prompt mais explícito
+                    enhanced_prompt = f"IMPORTANTE: Os documentos fornecidos CONTÊM informações sobre {', '.join(relevant_terms_in_context)}. "
+                    enhanced_prompt += "Extraia e sintetize QUALQUER menção a esses termos, mesmo que fragmentada. "
+                    enhanced_prompt += "NÃO responda que a informação não está disponível."
+                    
+                    # Combinando com o prompt original
+                    response = generate_response(context, enhanced_prompt + "\n\n" + query)
+            
+            return response
+                
         except Exception as e:
             logger.error(f"❌ Erro ao gerar resposta: {str(e)}")
             raise
     
     def execute(self, query: str, user_session: UserSession, 
-               case_id: str = None, n_results: int = 3) -> Dict[str, Any]:
+               case_id: str = None, n_results: int = 10) -> Dict[str, Any]:
         """
         Executa o fluxo RAG completo encapsulando todo o processamento
         
@@ -126,7 +138,7 @@ class RAGFlow:
             Dict: Resposta completa com metadados
         """
         start_time = time.time()
-        logger.info(f"🟢 Iniciando execução do RAGFlow para consulta: {query}")
+        logger.info(f"🔄 Iniciando execução do RAGFlow para consulta: {query}")
         
         try:
             # 1. Pré-processamento da consulta
@@ -182,7 +194,7 @@ class RAGFlow:
             }
             
             # 7. Registrar resposta no log
-            logger.info(f"✅ RAGFlow executado com sucesso - tempo: {time.time() - start_time:.2f}s")
+            logger.info(f"🏁 RAGFlow executado com sucesso - tempo: {time.time() - start_time:.2f}s")
             
             return response
             
