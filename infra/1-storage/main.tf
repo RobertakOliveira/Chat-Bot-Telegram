@@ -3,12 +3,14 @@
 # Criação do bucket S3 para armazenamento de documentos
 resource "aws_s3_bucket" "docs" {
   bucket        = "consultor-juridico-${var.environment}-${var.owner_tag}"
-  force_destroy = false
+  force_destroy = true
 
   tags = merge(var.common_tags, {
     Name        = "consultor-juridico-${var.owner_tag}",
     Component   = "storage",
     Sensitivity = "high"
+
+
   })
 }
 
