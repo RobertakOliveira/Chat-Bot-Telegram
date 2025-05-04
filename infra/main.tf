@@ -18,8 +18,9 @@ module "compute" {
   owner_tag      = var.owner_tag
   s3_bucket_name = module.storage.docs_bucket_name
   s3_bucket_arn  = module.storage.docs_bucket_arn
-    api_secret_key     = var.api_secret_key
+  api_secret_key     = var.api_secret_key
   telegram_bot_token = var.telegram_bot_token
+  project_name = var.project_name
 
 
 }

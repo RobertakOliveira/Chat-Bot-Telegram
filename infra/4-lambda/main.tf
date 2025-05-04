@@ -108,21 +108,21 @@ resource "aws_iam_role_policy" "lambda_ec2_access_extra" {
 
 # Regra do EventBridge para acionar Lambda quando EC2 for criada
 resource "aws_cloudwatch_event_rule" "ec2_created" {
-  name        = "trigger-lambda-on-ec2-creation-${var.environment}"
-  description = "Dispara a Lambda quando uma EC2 do chatbot é criada"
+  name          = "trigger-lambda-on-ec2-creation-${var.environment}"
+  description   = "Dispara a Lambda quando uma EC2 do chatbot é criada"
 
   event_pattern = jsonencode({
-    source      = ["aws.ec2"],
-    "detail-type" = ["AWS API Call via CloudTrail"],
-    detail = {
-      eventName = ["RunInstances"],
-      responseElements = {
-        instancesSet = {
-          items = [{
-            tags = {
-              items = [{
-                key   = ["Project"],
-                value = [var.project_name]
+    "source" : ["aws.ec2"],
+    "detail-type" : ["AWS API Call via CloudTrail"],
+    "detail" : {
+      "eventName" : ["RunInstances"],
+      "responseElements" : {
+        "instancesSet" : {
+          "items" : [{
+            "tagSet" : {
+              "items" : [{
+                "key" : "Project",
+                "value" : var.project_name
               }]
             }
           }]

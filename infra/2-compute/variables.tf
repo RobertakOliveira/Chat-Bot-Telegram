@@ -55,3 +55,8 @@ variable "api_secret_key"{
   description = "Chave secreta da API"
   sensitive   = true # Opcional: evita que o valor seja exibido em logs
 }
+
+variable "project_name" {
+  description = "Nome do projeto usado para tagueamento e identificação"
+  type        = string
+}
