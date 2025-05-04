@@ -5,6 +5,7 @@ def lambda_handler(event, context):
     project_tag = os.environ.get('PROJECT_TAG', 'consultor-juridico')
     ec2_client = boto3.client('ec2')
     regions = [region['RegionName'] for region in ec2_client.describe_regions()['Regions']]
+    env = os.environ.get('ENVIRONMENT', 'dev')
 
     for region in regions:
         ec2 = boto3.resource('ec2', region_name=region)
@@ -14,7 +15,8 @@ def lambda_handler(event, context):
         instances = ec2.instances.filter(
             Filters=[
                 {'Name': 'instance-state-name', 'Values': ['running']},
-                {'Name': 'tag:Project', 'Values': [project_tag]}
+                {'Name': 'tag:Project', 'Values': [project_tag]},
+                {'Name': 'tag:Name', 'Values': [f"chatbot-instance-{env}"]}
             ])
 
         for instance in instances:

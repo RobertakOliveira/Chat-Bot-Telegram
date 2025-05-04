@@ -10,6 +10,7 @@ resource "aws_lambda_function" "start_ec2" {
   environment {
     variables = {
       PROJECT_TAG = var.project_name
+      ENVIRONMENT = var.environment
     }
   }
 
@@ -30,6 +31,7 @@ resource "aws_lambda_function" "stop_ec2" {
   environment {
     variables = {
       PROJECT_TAG = var.project_name
+      ENVIRONMENT = var.environment
     }
   }
 
@@ -108,29 +110,17 @@ resource "aws_iam_role_policy" "lambda_ec2_access_extra" {
 
 # Regra do EventBridge para acionar Lambda quando EC2 for criada
 resource "aws_cloudwatch_event_rule" "ec2_created" {
-  name          = "trigger-lambda-on-ec2-creation-${var.environment}"
-  description   = "Dispara a Lambda quando uma EC2 do chatbot é criada"
-
+  name        = "trigger-lambda-on-ec2-creation-${var.environment}"
+  description = "Trigger Lambda on EC2 instance creation"
   event_pattern = jsonencode({
-    "source" : ["aws.ec2"],
-    "detail-type" : ["AWS API Call via CloudTrail"],
-    "detail" : {
-      "eventName" : ["RunInstances"],
-      "responseElements" : {
-        "instancesSet" : {
-          "items" : [{
-            "tagSet" : {
-              "items" : [{
-                "key" : "Project",
-                "value" : var.project_name
-              }]
-            }
-          }]
-        }
-      }
+    "source": ["aws.ec2"],
+    "detail-type": ["AWS API Call via CloudTrail"],
+    "detail": {
+      "eventName": ["RunInstances"]
     }
   })
 }
+
 
 # Destino do EventBridge → Lambda
 resource "aws_cloudwatch_event_target" "lambda_target" {
