@@ -197,7 +197,7 @@ def classify_query(query: str, session: UserSession) -> Dict:
             system_message=system_msg  # Todas as regras de classificação
         )
 
-        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        json_match = re.search(r'\{[\s\S]*?\}', response.strip())
         if json_match:
             result = json.loads(json_match.group())
             return {
@@ -299,12 +299,7 @@ def preprocess_query(user_query: str, session: UserSession) -> Dict:
         doc_type = classification["doc_type"]
         refined_query = refine_query(user_query, doc_type, session)
 
-        # *** AQUI ADICIONA A PERGUNTA REFINADA AO HISTÓRICO ***
-        session.add_message(refined_query)
-        logger.debug(
-            f"2- Pergunta refinada adicionada ao histórico: {refined_query}")
-
-        # 5. Preparar saída
+        # 3. Preparar saída
         return {
             "status": "success",
             "original_query": user_query,

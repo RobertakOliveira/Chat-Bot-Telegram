@@ -5,7 +5,7 @@ from chat.utils.logger import get_logger
 from chat.utils.prompt_template import prompt_template  # Importe o template
 from botocore.exceptions import BotoCoreError, ClientError
 
-logger = get_logger("generator")
+logger = get_logger("Geração de Respostas Jurídicas com Base nos Documentos")
 
 BEDROCK_MODEL_ID = "amazon.nova-pro-v1:0"
 REGION = "us-east-1"

@@ -6,10 +6,10 @@ from chat.utils.config import config
 from chat.utils.logger import get_logger
 import time
 
-logger = get_logger("retriever")
+logger = get_logger("Busca e Classificação de Documentos Jurídicos Relevantes")
 
 class ChromaRetriever:
-    def __init__(self, collection_name: str = "collection_89299"):
+    def __init__(self, collection_name: str = "collection_docs"):
         self.embedding_function = initialize_embedding_service().embeddings
         self.persist_directory = config.CHROMA_DB_PATH
         self.collection_name = collection_name
@@ -82,7 +82,7 @@ class ChromaRetriever:
             elapsed_time = time.time() - start_time
 
             if documents:
-                logger.info(f"📄 {len(documents)} documentos relevantes encontrados.")
+                logger.info(f"📚 {len(documents)} documentos relevantes encontrados.")
             else:
                 logger.warning(f"⚠️ Nenhum documento relevante encontrado.")
 
