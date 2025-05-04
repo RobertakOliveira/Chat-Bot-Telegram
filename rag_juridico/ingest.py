@@ -101,13 +101,18 @@ class DocumentProcessor:
     # ======CRIAÇÃO DO BANCO DE VETORES======
     def create_vector_store(self, chunks: List[Document]):
         self.logger.info("🔄 Gerando embeddings...")
-        self.vectordb = Chroma.from_documents(
+
+        # Criação correta da instância Chroma
+        vectordb = Chroma(
             documents=chunks,
             embedding=self.embedding_model,
             persist_directory=self.config.PERSIST_DIR,
             collection_name=self.config.COLLECTION_NAME
         )
+
+        vectordb.add_documents(chunks)
         self.vectordb.persist()
+        
         self.logger.info(f"📦 Base criada com {self.vectordb._collection.count()} vetores")
 
     # ======CONSULTA À BASE VETORIAL======

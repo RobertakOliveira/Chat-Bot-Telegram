@@ -34,3 +34,4 @@ terraform.tfvars
 *.tmp
 terraform/sprint7-key.pem
 .env
+bot_telegram/src/.env
