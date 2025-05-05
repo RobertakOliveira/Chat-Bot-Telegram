@@ -142,58 +142,65 @@
 
 <div align="center">
 
-<table style="width:90%; border-collapse: collapse;">
+<table style="width:70%; table-layout: fixed; border-collapse: collapse;">
   <tr>
-    <td align="center" style="padding: 25px; border: 1px solid #ddd;">
-      <img src="assets/Amanda-Ximenes.png" alt="Amanda Ximenes" width="200" height="200" style="border-radius: 50%; display: block; margin: auto;"><br>
+    <td align="center" style="padding: 20px 10px; border: 1px solid #ddd;">
+      <img src="assets/Amanda-Ximenes.png" alt="Amanda Ximenes" width="200" style="border-radius: 50%;"><br>
       <strong>Amanda Ximenes</strong><br>
-      <em>Infraestrutura, Dockerização e EC2</em><br><br>
-      <a href="https://github.com/AmandaCampoos" target="_blank" title="GitHub de Amanda">
-        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub da Amanda">
+      <em>Infraestrutura, Dockerização e EC2</em><br>
+      <br>
+      <a href="https://github.com/AmandaCampoos" target="_blank">
+        <img src="https://img.shields.io/badge/GitHub-100000?style=flat-square&logo=github&logoColor=white">
       </a>
-      <a href="https://linkedin.com/in/amanda-ximenes-a02ab8266" target="_blank" title="LinkedIn de Amanda">
-        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn da Amanda">
+      <a href="https://linkedin.com/in/amanda-ximenes-a02ab8266" target="_blank">
+        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=flat-square&logo=linkedin&logoColor=white">
       </a>
     </td>
-    <td align="center" style="padding: 25px; border: 1px solid #ddd;">
-      <img src="assets/José-Carlos.png" alt="José Carlos" width="200" height="200" style="border-radius: 50%; display: block; margin: auto;"><br>
+    <td align="center" style="padding: 20px 10px; border: 1px solid #ddd;">
+      <img src="assets/José-Carlos.png" alt="José Carlos" width="200" style="border-radius: 50%;"><br>
       <strong>José Carlos</strong><br>
-      <em>Processamento de Dados e Geração dos Embeddings</em><br><br>
-      <a href="https://github.com/josecarlosjccf" target="_blank" title="GitHub de José">
-        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub do José">
+      <em>Processamento de Dados e Geração dos Embeddings</em><br>
+      <br>
+      <a href="https://github.com/josecarlosjccf" target="_blank">
+        <img src="https://img.shields.io/badge/GitHub-100000?style=flat-square&logo=github&logoColor=white">
       </a>
-      <a href="https://www.linkedin.com/in/jos%C3%A9-carlos-candido-73b723235" target="_blank" title="LinkedIn de José">
-        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn do José">
+      <a href="https://www.linkedin.com/in/jos%C3%A9-carlos-candido-73b723235" target="_blank">
+        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=flat-square&logo=linkedin&logoColor=white">
       </a>
     </td>
   </tr>
   <tr>
-    <td align="center" style="padding: 25px; border: 1px solid #ddd;">
-      <img src="assets/Carlos-Vital.png" alt="Carlos Vital" width="200" height="200" style="border-radius: 50%; display: block; margin: auto;"><br>
+    <td align="center" style="padding: 20px 10px; border: 1px solid #ddd;">
+      <img src="assets/Carlos-Vital.png" alt="Carlos Vital" width="200" style="border-radius: 50%;"><br>
       <strong>Carlos Eduardo</strong><br>
-      <em>Implementação do Chatbot (LangChain + RAG)</em><br><br>
-      <a href="https://github.com/CarlosEduardo-067" target="_blank" title="GitHub de Carlos">
-        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub do Carlos">
+      <em>Implementação do Chatbot (LangChain + RAG)</em><br>
+      <br>
+      <a href="https://github.com/CarlosEduardo-067" target="_blank">
+        <img src="https://img.shields.io/badge/GitHub-100000?style=flat-square&logo=github&logoColor=white">
       </a>
-      <a href="https://www.linkedin.com/in/carlos-eduardo-dos-santos-vital-9335612b1" target="_blank" title="LinkedIn de Carlos">
-        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn do Carlos">
+      <a href="https://www.linkedin.com/in/carlos-eduardo-dos-santos-vital-9335612b1" target="_blank">
+        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=flat-square&logo=linkedin&logoColor=white">
       </a>
     </td>
-    <td align="center" style="padding: 25px; border: 1px solid #ddd;">
-      <img src="assets/Roberta-Oliveira.png" alt="Roberta Oliveira" width="200" height="200" style="border-radius: 50%; display: block; margin: auto;"><br>
+    <td align="center" style="padding: 20px 10px; border: 1px solid #ddd;">
+      <img src="assets/Roberta-Oliveira.png" alt="Roberta Oliveira" width="200" style="border-radius: 50%;"><br>
       <strong>Roberta Oliveira</strong><br>
-      <em>Interface com o Telegram, Monitoramento dos logs com o Amazon CloudWatch e Documentação do Projeto(README)</em><br><br>
-      <a href="https://github.com/RobertakOliveira" target="_blank" title="GitHub de Roberta">
-        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub da Roberta">
+      <em>Integração Telegram, Monitoramento com CloudWatch e Documentação do Projeto(README)</em><br>
+      <br>
+      <a href="https://github.com/RobertakOliveira" target="_blank">
+        <img src="https://img.shields.io/badge/GitHub-100000?style=flat-square&logo=github&logoColor=white">
       </a>
-      <a href="https://linkedin.com/in/roberta-oliveira-b9a0961a4" target="_blank" title="LinkedIn de Roberta">
-        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn da Roberta">
+      <a href="https://linkedin.com/in/roberta-oliveira-b9a0961a4" target="_blank">
+        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=flat-square&logo=linkedin&logoColor=white">
       </a>
     </td>
   </tr>
 </table>
 
 </div>
+
+
+
 
 ## ⚠️ Dificuldades Enfrentadas
 
