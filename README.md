@@ -24,16 +24,21 @@
 ## 🤖 URL do ChatBot
 [Advoga Assistant Bot](https://t.me/AdvogaAssistantBot)
 
+## 📚 Documentações Relacionadas
+
+- [📦 Infraestrutura (Terraform, AWS e Docker)](./terraform/README.md)
+- [🤖 Chatbot (LangChain + FastAPI + Telegram)](./bot_telegram/README.md)
+
 ## 📑 Índice
 
-1. [URL do ChatBot](#🤖-url-do-chatbot)  
-2. [Finalidade do Chatbot](#🎯-finalidade-do-chatbot)  
-3. [Tecnologias Utilizadas](#🛠️-tecnologias-utilizadas)  
-4. [Documentações Relacionadas](#📚-documentações-relacionadas)  
-5. [Estrutura de Pastas](#📂-estrutura-de-pastas)  
-6. [Metodologia Utilizada](#📌-metodologia-utilizada)  
-7. [Time de Desenvolvimento](#👥-time-de-desenvolvimento)  
-8. [Dificuldades Enfrentadas](#⚠️-dificuldades-enfrentadas)  
+1. [URL do ChatBot](#url-do-chatbot)  
+2. [Documentações Relacionadas](#documentacoes-relacionadas)
+3. [Finalidade do Chatbot](#finalidade-do-chatbot)  
+4. [Tecnologias Utilizadas](#tecnologias-utilizadas)    
+5. [Estrutura de Pastas](#estrutura-de-pastas)  
+6. [Metodologia Utilizada](#metodologia-utilizada)  
+7. [Time de Desenvolvimento](#time-de-desenvolvimento)  
+8. [Dificuldades Enfrentadas](#dificuldades-enfrentadas)  
 ---
 
 ## 🎯 Finalidade do Chatbot
@@ -57,12 +62,6 @@
 - **Docker e Docker Compose** – Containerização do ambiente
 - **Terraform** – Provisionamento da infraestrutura AWS
 - **Telegram Bot API** – Interface com o usuário
-
-## 📚 Documentações Relacionadas
-
-- [📦 Infraestrutura (Terraform, AWS e Docker)](./terraform/README.md)
-- [🤖 Chatbot (LangChain + FastAPI + Telegram)](./bot_telegram/README.md)
----
 
 ## 📂 Estrutura de Pastas 
 
