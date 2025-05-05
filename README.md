@@ -147,7 +147,7 @@
     <td align="center" style="padding: 25px; border: 1px solid #ddd;">
       <img src="assets/Amanda-Ximenes.png" alt="Amanda Ximenes" width="200" height="200" style="border-radius: 50%; display: block; margin: auto;"><br>
       <strong>Amanda Ximenes</strong><br>
-      <em>Infraestrutura e EC2</em><br><br>
+      <em>Infraestrutura, Docker e EC2</em><br><br>
       <a href="https://github.com/AmandaCampoos" target="_blank" title="GitHub de Amanda">
         <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub da Amanda">
       </a>
@@ -182,7 +182,7 @@
     <td align="center" style="padding: 25px; border: 1px solid #ddd;">
       <img src="assets/Roberta-Oliveira.png" alt="Roberta Oliveira" width="200" height="200" style="border-radius: 50%; display: block; margin: auto;"><br>
       <strong>Roberta Oliveira</strong><br>
-      <em>Interface com o Telegram, Cloudwatche e README</em><br>
+      <em>Interface com o Telegram, Cloudwatch e README</em><br>
       <br>
       <a href="https://github.com/RobertakOliveira" target="_blank" title="GitHub de Roberta">
         <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub da Roberta">
