@@ -25,9 +25,10 @@
 [Advoga Assistant Bot](https://t.me/AdvogaAssistantBot)
 
 ## 📚 Documentações Relacionadas
+#### Confira abaixo os outros dois READMEs do projeto para entender melhor a estrutura e funcionamento dos módulos:
 
-- [📦 Infraestrutura (Terraform, AWS e Docker)](./terraform/README.md)
-- [🤖 Chatbot (LangChain + FastAPI + Telegram)](./bot_telegram/README.md)
+- [📦 Infraestrutura (Terraform, AWS e Docker)](./terraform/README.md) - Detalhes sobre Terraform, AWS e Docker
+- [🤖 Chatbot (LangChain + FastAPI + Telegram)](./bot_telegram/README.md) - Integração com LangChain, FastAPI e Telegram
 
 ## 📑 Índice
 
@@ -67,61 +68,63 @@
 
 ```
 📦 sprints-7-8-pb-aws-janeiro/
-├── 📁 .github/                 # Configurações de CI/CD com GitHub Actions
+├── 📁 .github/                        # Configurações de CI/CD com GitHub Actions
 │   └── workflows/
-│       └── deploy.yml         # Workflow para deploy automatizado
+│       └── deploy.yml                 # Workflow para deploy automatizado
 │
-├── 📁 assets/                 # Imagens e recursos estáticos para os READMEs
+├── 📁 assets/                        # Imagens e recursos estáticos para os READMEs
 │
-├── 📁 bot_telegram/           # Bot Telegram com integração à FastAPI
+├── 📁 bot_telegram/                  # Bot Telegram com integração à FastAPI
 │   ├── 📁 src/
-│   │   ├── 📁 handlers/       # Lógica dos comandos e mensagens do bot
+│   │   ├── 📁 handlers/              # Lógica dos comandos e mensagens do bot
 │   │   │   ├── __init__.py
 │   │   │   └── bot_handlers.py
-│   │   ├── 📁 logger/         # Sistema de logging customizado
+│   │   ├── 📁 logger/                # Sistema de logging customizado
 │   │   │   └── __init__.py
-│   │   ├── 🔧 config.py       # Configurações globais do bot
-│   │   ├── 🤖 bot.py          # Arquivo principal que inicia o bot
+│   │   ├── 🔧 config.py              # Configurações globais do bot
+│   │   ├── 🤖 bot.py                 # Arquivo principal que inicia o bot
 │   │   └── __init__.py
-│   ├── 🧪 requirements.txt     # Dependências específicas do bot
-│   ├── 📄 README.md           # Instruções de uso do bot
-│   └── 🐍 venv/               # Ambiente virtual Python
+│   ├── 🧪 requirements.txt           # Dependências específicas do bot
+│   ├── 📄 README.md                  # Instruções de uso do bot
+│   └── 🐍 venv/                      # Ambiente virtual Python
 │
-├── 📁 chat/                   # API FastAPI para comunicação com o modelo
-│   ├── 🧠 rag_juridico/       # Base de embeddings + ChromaDB
-│   │   └── chroma.sqlite3     # Arquivo local do banco vetorial
-│   ├── 🧪 teste_chroma/       # Testes com a base do Chroma
+├── 📁 chat/                          # API FastAPI para comunicação com o modelo
+│   ├── 🧠 rag_juridico/              # Base de embeddings + ChromaDB
+│   │   └── chroma.sqlite3             # Arquivo local do banco vetorial
+│   ├── 🧪 teste_chroma/              # Testes com a base do Chroma
 │   │   └── chroma.sqlite3
-│   ├── 🤖 chatbot.py         # Endpoint da API que responde perguntas
-│   ├── 🧪 requirements.txt     # Dependências da API
+│   ├── 🤖 chatbot.py                 # Endpoint da API que responde perguntas
+│   ├── 🧪 requirements.txt           # Dependências da API
 │   └── 🐍 venv/
 │
-├── 📁 dataset/                # Pasta para arquivos PDF jurídicos originais
+├── 📁 dataset/                       # Pasta para arquivos PDF jurídicos originais
 │
-├── 📁 docker/                 # Infraestrutura Docker
-│   ├── 🐳 docker-compose.yml  # Orquestração do ambiente
-│   ├── 🐋 Dockerfile          # Imagem do app
-│   └── 📦 requirements.txt    # Dependências containerizadas
+├── 📁 docker/                        # Infraestrutura Docker
+│   ├── 🐳 docker-compose.yml         # Orquestração do ambiente
+│   ├── 🐋 Dockerfile                 # Imagem do app
+│   └── 📦 requirements.txt           # Dependências containerizadas
 │
-├── 📁 rag_juridico/           # Scripts de ingestão de documentos
-│   ├── 📂 dataset/            # Entrada para os arquivos a serem processados
-│   ├── 🧪 teste_chroma/       # Testes de leitura e embeddings
-│   ├── 📄 ingest.py           # Geração de embeddings e upload
-│   ├── 📄 ler_pdfs.py         # Leitura dos PDFs
-│   └── 📦 requirements.txt    # Dependências para geração de embeddings
+├── 📁 rag_juridico/                  # Scripts de ingestão de documentos
+│   ├── 📂 dataset/                   # Entrada para os arquivos a serem processados
+│   ├── 🧪 teste_chroma/              # Testes de leitura e embeddings
+│   ├── 📄 ingest.py                  # Geração de embeddings e upload
+│   ├── 📄 ler_pdfs.py                # Leitura dos PDFs
+│   └── 📦 requirements.txt           # Dependências para geração de embeddings
 │
-├── 📁 scripts/                # Scripts de automação
-│   ├── 🚀 script_inicial_ec2.sh   # Inicialização da EC2
-│   └── ☁️ upload_to_s3.py        # Envio de arquivos para o S3
+├── 📁 scripts/                       # Scripts de automação
+│   ├── 🚀 script_inicial_ec2.sh      # Inicialização da EC2
+│   └── ☁️ upload_to_s3.py            # Envio de arquivos para o S3
 │   └── 🐍 venv/
 │
-├── 📁 terraform/              # Infraestrutura como código (AWS)
+├── 📁 terraform/                     # Infraestrutura como código (AWS)
 │   └── ...                    
 │
-├── 🔐 .env                    # Variáveis de ambiente (não versionar)
-├── 📄 .gitignore              # Arquivos ignorados pelo Git
-├── 📄 README.md               # README principal com visão geral
-└── 📄 requirements.txt        # Dependências do projeto raiz 
+├── 🔐 .env                           # Variáveis de ambiente (não versionar)
+├── 📄 .gitignore                     # Arquivos ignorados pelo Git
+├── 📄 README.md                      # README principal com visão geral
+└── 📄 requirements.txt               # Dependências do projeto raiz 
+├── 🐳 docker-compose.yml             # Orquestração dos serviços do projeto
+└── 🐋 Dockerfile
 ```
 ## 📌 Metodologia Utilizada
 
