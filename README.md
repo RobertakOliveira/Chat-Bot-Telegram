@@ -2,6 +2,7 @@
 
 # ⚖️ AdvogaBot
 
+
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white)
 ![LangChain](https://img.shields.io/badge/LangChain-000000?style=for-the-badge&logo=langchain&logoColor=white)
@@ -21,6 +22,13 @@
 
 **AdvogaBot** é um chatbot jurídico impulsionado por Inteligência Artificial que aplica RAG (Retrieval-Augmented Generation) para fornecer respostas precisas a partir de documentos legais hospedados na AWS.
 
+> ⚠️ **Atenção**
+>
+> Todos os links deste projeto, inclusive o do chatbot, foram **desativados temporariamente**.  
+> A aplicação estava hospedada em uma instância **EC2 da AWS**, que foi **deletada para evitar custos adicionais**.
+>
+> Para executar localmente ou realizar o deploy, siga as instruções técnicas nos READMEs relacionados mais abaixo.
+
 ## 🤖 URL do ChatBot
 [Advoga Assistant Bot](https://t.me/AdvogaAssistantBot)
 
@@ -32,14 +40,16 @@
 
 ## 📑 Índice
 
-1. [URL do ChatBot](#url-do-chatbot)  
-2. [Documentações Relacionadas](#documentacoes-relacionadas)
-3. [Finalidade do Chatbot](#finalidade-do-chatbot)  
-4. [Tecnologias Utilizadas](#tecnologias-utilizadas)    
-5. [Estrutura de Pastas](#estrutura-de-pastas)  
-6. [Metodologia Utilizada](#metodologia-utilizada)  
-7. [Time de Desenvolvimento](#time-de-desenvolvimento)  
-8. [Dificuldades Enfrentadas](#dificuldades-enfrentadas)  
+1. [URL do ChatBot](#🤖-url-do-chatbot)  
+2. [Documentações Relacionadas](#📚-documentações-relacionadas)  
+3. [Finalidade do Chatbot](#🎯-finalidade-do-chatbot)  
+4. [Tecnologias Utilizadas](#🛠️-tecnologias-utilizadas)  
+5. [Estrutura de Pastas](#📂-estrutura-de-pastas)  
+6. [Metodologia Utilizada](#📌-metodologia-utilizada)  
+7. [Tela Inicial do Chatbot](#🖥️-tela-inicial-do-chatbot)  
+8. [Exemplos de Interação com o Chatbot](#📸-exemplos-de-interação-com-o-chatbot)  
+9. [Time de Desenvolvimento](#👥-time-de-desenvolvimento)  
+10. [Dificuldades Enfrentadas](#⚠️-dificuldades-enfrentadas)    
 ---
 
 ## 🎯 Finalidade do Chatbot
@@ -139,6 +149,23 @@
 - Trello – https://trello.com/b/wr4BVDeD/grupo-02
 
 - WhatsApp e Microsoft Teams para reuniões e alinhamentos
+
+## 🖥️ Tela inicial do Chatbot
+
+<div align="center">
+<img src="assets/Tela-Inicial-Chat.png"  width="300">
+</div>
+
+## 📸 Exemplos de Interação com o Chatbot
+
+<div align="center">
+<img src="assets/Bate-Papo-2.png"  width="300">	
+</div>
+<div align="center">
+<img src="assets/Bate-Papo-1.png" width="300">	
+</div>
+
+> 🔍 Os exemplos acima demonstram como o AdvogaBot interpreta questões jurídicas e retorna respostas contextualizadas com base nos documentos legais previamente processados.
 
 ## 👥 Time de Desenvolvimento
 
